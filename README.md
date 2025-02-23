@@ -13,6 +13,7 @@
  Расширение Soundrive: Sa Gin(@sa gin), Кошкин Хвост(@tecnocat) 
  TFT драйвер: Алекс Екб(@Alex_Eburg), Кошкин Хвост(@tecnocat)
 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 Welcome!!!
 
 This project is designed for "minimalistic" emulation of computer "ZX-Spectrum" based on the controller [Raspberry Pi Pico]
