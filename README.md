@@ -1,6 +1,7 @@
 Приветствуем!!!
 
 Данный проект предназначен для "минималистичной" эмуляции компьютера "ZX-Spectrum" на базе контроллера [Raspberry Pi Pico].
+
 Группа проекта: https://t.me/ZX_MURMULATOR
 
 -----------------------==[Authors]==------------------------
@@ -17,6 +18,7 @@
 Welcome!!!
 
 This project is designed for "minimalistic" emulation of computer "ZX-Spectrum" based on the controller [Raspberry Pi Pico]
+
 Project Group: https://t.me/ZX_MURMULATOR                
                                                            
 -----------------------==[Authors]==------------------------
