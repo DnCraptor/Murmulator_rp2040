@@ -1,0 +1,86 @@
+Welcome!!!
+This project is designed for a "minimalistic" emulation of the ZX-Spectrum computer based on the Raspberry Pi Pico controller.
+
+	Project Group: https://t.me/ZX_MURMULATOR
+
+		---==[Authors]==---
+	Author of core and hardware: Alex Ekb(@Alex_Eburg)
+	TR-DOS Support: First Last(@First_0x26_Last)
+	File Manager: Alex Ekb(@Alex_Eburg), Cat's Tail(@tecnocat)
+	SoftTurboSound Extension: Alex Ekb(@Alex_Eburg), Cat's Tail(@tecnocat), Sa Gin(@sa gin)
+	TurboSound Extension: Alex Ekb(@Alex_Eburg), Sa Gin(@sa gin), Cat's Tail(@tecnocat)
+	Soundrive Extension: Sa Gin(@sa gin), Cat's Tail(@tecnocat)
+
+
+***************************************************************************************************************
+
+		---==[Keyboard Shortcuts]==---
+[F1]			- Help
+[F2]			- Save Menu
+[F3]			- Boot Menu
+[Win]/[Home]	- File Manager
+[Ctrl+Alt+Del]	- Reset the emulator
+[Ctrl+Alt+Ins]	- NMI emulator
+[Shift+Alt+Del]	- Reset the controller
+[Ctrl+F1-F10]	- Save the image .z80 to the "SAVE" folder of the SD card
+[Shift+F1-F10]	- Loading the image .z80 from the "SAVE" folder of the SD card
+[Menu]/[F12]	- Displays free save slots by Ctrl+F1-F10
+[BackSpace]		- Output one directory above the current level in the file manager
+[F11]			- Switching the active joystick
+[Ctrl+F11]		- Access the quick menu
+[Pause]			- Pause emulation
+
+		--=[Working with the "ribbon" .tap]=--
+[F5]			- Start the tape
+[F6]			- Stop the tape, repeat in stop mode: rewind to the beginning
+[F7]			- Next block
+[F8]			- Previous block
+
+		--=[Joystick]=--
+[START]			- Quick menu call / Exiting the file manager
+[A]				- File Selection
+[C]				- Exit to the level up
+
+		--=[In-game joystick]=--
+[START]			- Quick menu call / Exiting the file manager
+[A]				- The action assigned in the game
+[B]				- The action assigned in the game
+[C]				- The action assigned in the game
+
+		--=[Navigation in the file manager]=--
+[Cursor keys:]
+[Left arrow]	- Start of the list
+[Right arrow]	- End of the list
+[Up Arrow]		- Previous file
+[Down arrow]	- Next file
+[PageUp]		- Page up
+[PageDn]		- Page down
+[Enter]			- Launching the image
+[F12]			- Emulator settings
+/[Tap load]		- Boot settings .tap
+/[Def joy mode]	- Joystick mode
+		[Ext Joystick]			- An external joystick is connected to the Kemston port
+		[Kempston Joystick]		- Emulation from the cursor keys of the keyboard
+		[Interface2 Joystick]	- Keyboard cursor keys as Interface2
+		[Cursor Joystick]		- Cursor keys of the keyboard as Cursor
+		[---===[NONE]===---]	- Everything is off
+	/[Reboot ZX before load]	- Reset the emulation before loading
+	/[Snd mode]					- Switching the audio output
+	/[LOAD]						- Load settings from SD
+	/[DEFAULT]					- Default settings
+	/[SAVE]						- Save settings to SD
+	
+		--=[ Debugger NMI commands ]=--
+	1 — switches the number system 16/10;
+	2 — Switches the digital/character representation;
+	3 — requests a number and enters it into the current register;
+	4 — request a number and enter it into the current memory grid;
+	CS+5 — 64 addresses back;
+	CS+6 — 1 address back;
+	CS+7 — 1 address ahead;
+	CS+8 — 64 addresses ahead;
+	CS+9 — go to the previous register;
+	CS+0 — move to the next register;
+	SS+7 — requesting a number and calling a subroutine at the entered address;
+	SS+0 — if the command line is empty, then exit the monitor in Basic;
+	SPACE — sets the cell according to the entered number

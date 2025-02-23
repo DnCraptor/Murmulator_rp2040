@@ -1,0 +1,19 @@
+#pragma once
+
+#include "hardware/pio.h"
+
+
+#define LATCH_595_PIN (26)
+#define CLK_595_PIN (27)
+#define DATA_595_PIN (28)
+#define CLK_AY_PIN1 (21)
+#define CLK_AY_PIN2 (29)
+#define TSPIN_MODE_OFF  (0)
+#define TSPIN_MODE_GP21 (1)
+#define TSPIN_MODE_GP29 (2)
+
+
+void Init_PWM_175(uint8_t tspin_mode);
+void Deinit_PWM_175();
+
+void send_to_595(uint16_t data);
