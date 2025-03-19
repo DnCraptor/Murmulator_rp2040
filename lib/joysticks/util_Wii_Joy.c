@@ -6,6 +6,8 @@
 #include "hardware/gpio.h"
 #include "util_Wii_Joy.h"
 
+struct WIIController Wii_joy_data;
+
 bool WII_Init = false;
 uint8_t WII_Data[WII_BYTE_COUNT];
 uint8_t WII_Data_Old[WII_BYTE_COUNT];

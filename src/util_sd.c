@@ -1,11 +1,27 @@
 #include <stdio.h>
-#include <ff.h>
 #include "string.h"
 #include <fcntl.h>
-#include <zx_emu/z80.h>
+#include "zx_emu/z80.h"
 #include "util_sd.h"
 #include "utf_handle.h"
 #include "globals.h"
+
+
+int file_descr; // индикатор ошибки чтения файла
+static FATFS file_sys;
+FIL sd_file;
+DIR sd_dir;
+FILINFO sd_file_info;
+FRESULT sd_res;
+size_t sd_f_size;
+
+char dirs[DIRS_DEPTH+5][FILE_NAME_LEN];
+char files[MAX_FILES+5][FILE_NAME_LEN];
+char dir_path[(DIRS_DEPTH+5)*FILE_NAME_LEN];
+char activefilename[400];
+char afilename[FILE_NAME_LEN+1];
+uint8_t sd_buffer[SD_BUFFER_SIZE]; //буфер для работы с файлами
+char filename[260];
 
 //extern uint8_t zx_color[];
 
@@ -37,7 +53,7 @@ bool init_filesystem(void){
 	files[0][(FILE_NAME_LEN-1)]|=TOP_DIR_ATTR;
 	//read_select_dir(1);
 	strcpy(activefilename,"");
-	file_descr=f_mount(&fs, dirs[0], 1);
+	file_descr=f_mount(&file_sys, dirs[0], 1);
 	if (file_descr!=FR_OK) return false;
 	file_descr=f_opendir(&sd_dir,dirs[0]);
 	if (file_descr!=FR_OK) return false;

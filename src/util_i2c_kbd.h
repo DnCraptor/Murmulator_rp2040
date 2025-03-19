@@ -33,18 +33,11 @@ struct kbd_markup{
 	uint32_t	kbd_mask;	// Маска сканкода PS/2
 }; //__packed
 
-uint8_t ibuff[KEY_ARRAY_SIZE_RP2040];				// буфер для данных  из USB RP2040 to i2c
 
-uint8_t i2c_dev[MAX_QNT_DEVICES];
-uint8_t i2c_data[KEY_ARRAY_SIZE*MAX_QNT_DEVICES];
-static uint8_t cnt_dev;
-uint8_t val[2] ;
-uint8_t scan;
-uint8_t oldscan;
+extern uint8_t ibuff[KEY_ARRAY_SIZE_RP2040];
 
-int state;
 extern kb_u_state kb_st_ps2;
-kbd_markup *layout;
+extern kbd_markup *layout;
 
 void i2c_kbd_deinit();
 int i2c_kbd_data_in();

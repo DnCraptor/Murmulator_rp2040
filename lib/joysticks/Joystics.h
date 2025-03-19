@@ -102,8 +102,8 @@ struct DataJoystics{
     uint32_t Data_WII_joy;   
 };
 
-PresentJoystics Joystics;
-DataJoystics Joy_data;
+extern PresentJoystics Joystics;
+extern DataJoystics Joy_data;
 
 int joy_start();
 int active_joystick_data(int active_joystick);

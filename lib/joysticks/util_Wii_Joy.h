@@ -40,7 +40,7 @@ struct WIIController {
   bool ButtonZR;
 };
 
-struct WIIController Wii_joy_data;
+extern struct WIIController Wii_joy_data;
 
 bool Init_Wii_Joystick();
 void Deinit_Wii_Joystick();

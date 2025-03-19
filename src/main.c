@@ -1,4 +1,7 @@
 #define PICO_FLASH_SPI_CLKDIV 4
+
+#define VGA_HDMI
+
 // #define PICO_FLASH_SIZE_BYTES (4 * 1024 * 1024)
 
 //#define DEBUG_DELAY
@@ -71,12 +74,13 @@
 (byte & 0x01 ? '1' : '0') 
 
 
-
+#include <pico.h>
 #include <stdio.h>
 #include <pico/stdlib.h>
-#include "pico/multicore.h"
-#include "pico/bootrom.h"
-#include "hardware/flash.h"
+#include <pico/multicore.h>
+#include <pico/bootrom.h>
+#include <pico/rand.h>
+#include <pico/stdio_usb.h>
 #include <hardware/sync.h>
 #include <hardware/irq.h>
 #include "hardware/watchdog.h"
@@ -87,17 +91,20 @@
 #include <math.h>
 #include <string.h>
 
-#include "globals.h"
-#include "Joy/Joystics.h"
+//#include <pico/flash.h>
 
-#if VGA_HDMI
-	#include "video.h"
+
+#include "globals.h"
+#include "../lib/joysticks/Joystics.h"
+
+#ifdef VGA_HDMI
+	#include "../lib/video/video.h"
 #endif
-#if COMPOSITE_TV
-	#include "tv_out/tv_out.h"
+#ifdef COMPOSITE_TV
+	#include "../lib/tv_out/tv_out.h"
 #endif
-#if SOFT_COMPOSITE_TV
-	#include "tv_out_soft/tv_out.h"
+#ifdef SOFT_COMPOSITE_TV
+	#include "../lib/tv_out_soft/tv_out.h"
 #endif
 
 extern bool graphics_begin_screen;
@@ -115,7 +122,9 @@ extern bool graphics_begin_screen;
 
 #include "wd1793.h"
 #include "util_i2c_kbd.h" // i2c keyboard
-#include "i2s.h"
+#include "../lib/sound/i2s.h"
+
+extern void i2s_out(int16_t l_out,int16_t r_out);
 
 #include "hud_func.h"
 
@@ -143,7 +152,31 @@ extern bool graphics_begin_screen;
 #include "util_cfg.h"
 #include "util_cfg_menu.h"
 #include "util_power.h"
-#include "pico/rand.h"
+
+
+extern uint8_t cfg_boot_scr;
+extern uint8_t cfg_hud_enable;
+extern uint8_t cfg_tap_load_mode;
+extern uint8_t cfg_tape_load_pin;
+extern uint8_t cfg_def_joy1_mode;
+extern uint8_t cfg_def_joy2_mode;
+extern uint8_t cfg_def_kbd_mode;
+extern uint8_t cfg_res_before_mode;
+extern uint8_t cfg_sound_out_mode;
+extern uint8_t cfg_sound_mode;
+extern short int cfg_volume;
+extern uint8_t cfg_tspin_mode;
+extern uint8_t cfg_tsspeed_mode;
+extern uint8_t cfg_tschip_order;
+extern uint8_t cfg_video_out;
+extern uint8_t cfg_frame_rate;
+extern uint8_t cfg_lcd_video_out;
+extern uint8_t cfg_rotate;
+extern uint8_t cfg_inversion;
+extern uint8_t cfg_pixels;
+extern uint8_t cfg_brightness;
+extern uint8_t cfg_mobile_mode;
+
 
 
 /*Forward declarations*/
@@ -201,8 +234,6 @@ short int lineStart=0;
 short int fast_menu_index=0;
 short int old_menu_index=0;
 
-uint8_t fast_mode[5]={0,0,0,0,0};
-uint8_t fast_mode_ptr=0;
 
 uint8_t current_settings=0;
 uint8_t current_drive=0;
@@ -211,6 +242,9 @@ char save_file_name_image[25];
 short int fr =-1;
 
 bool need_reset_after_menu=false;
+
+uint8_t fast_mode[5]={0,0,0,0,0};
+uint8_t fast_mode_ptr=0;
 
 uint8_t menu_mode[5]={0,0,0,0,0};
 uint8_t menu_ptr=0;
@@ -437,6 +471,32 @@ uint8_t rel_data_joy=0;
 // }
 
 /*process input*/
+void reset_kmouse(){
+	zx_write_buffer->kempston=0;
+	zx_write_buffer->kempston_mouse_whl=0xF0;
+	zx_write_buffer->kempston_mouse_btn=0xFF;
+	zx_write_buffer->kempston_mouse_x=0x80;
+	zx_write_buffer->kempston_mouse_y=0x80;
+}
+
+void map_kmouse(struct WIIController* Wii_joy, ZX_Input_t* zx_input){
+	if((Wii_joy->RightX>7)||(Wii_joy->RightX<-7)){zx_input->kempston_mouse_x+=(uint8_t)(Wii_joy->RightX>>5);}
+	if((Wii_joy->RightY>7)||(Wii_joy->RightY<-7)){zx_input->kempston_mouse_y+=(uint8_t)(Wii_joy->RightY>>5);}
+	if (Wii_joy->ButtonR)  zx_input->kempston_mouse_btn&=~1; else zx_input->kempston_mouse_btn|=1;
+	if (Wii_joy->ButtonL)  zx_input->kempston_mouse_btn&=~2; else zx_input->kempston_mouse_btn|=2;
+	if (Wii_joy->ButtonZR) zx_input->kempston_mouse_btn&=~4; else zx_input->kempston_mouse_btn|=4;
+	if (Wii_joy->ButtonZL) zx_input->kempston_mouse_btn&=~8; else zx_input->kempston_mouse_btn|=8;		
+	if((Wii_joy->LeftY>7)||(Wii_joy->LeftY<-7)){
+		if(Wii_joy->LeftY>0) zx_input->kempston_mouse_whl-=(uint8_t)(1<<4);
+		if(Wii_joy->LeftY<0) zx_input->kempston_mouse_whl+=(uint8_t)(1<<4);
+		//printf("kempston_mouse_whl:%02X \n",zx_input->kempston_mouse_whl);
+		zx_input->kempston_mouse_btn&=0x0F;
+		zx_input->kempston_mouse_btn|=zx_input->kempston_mouse_whl;
+		//printf("kempston_mouse_btn:%02X \n",zx_input->kempston_mouse_btn);
+	}
+	
+}
+
 void process_input(){
 	if(i2cKbdMode){
 		keyPressed = i2c_decode_kbd();
@@ -508,12 +568,6 @@ bool wait_kbdjoy_menu(void){
 
 
 /*-------Graphics--------*/
-
-
-void draw_logo_header(short int xPos,short int yPos){
-	draw_stripes(xPos, yPos);
-	draw_text_len(xPos+SPEC_LOGO_W,yPos,"MURMULATOR",COLOR_ITEXT,CL_EMPTY,10);
-}
 
 void draw_mur_logo(){
 	//return;
@@ -996,7 +1050,7 @@ void draw_config_menu(uint8_t xPos,uint8_t yPos,bool drawbg,uint8_t active){
 		
 	} 		
 	for(uint8_t y=0;y<lines;y++){
-		#if VGA_HDMI
+		#ifdef VGA_HDMI
 		if((g_out)cfg_video_out<g_out_TFT_ST7789){
 			if((y>16)&&(y<(settings_lines-4))){
 				draw_text_len(xPos,(yPos+FONT_H)+(y*FONT_H),config_menu[y],COLOR_DTEXT,y==active?COLOR_CURRENT_BG:COLOR_BACKGOUND,27);
@@ -1072,7 +1126,7 @@ void draw_config_menu(uint8_t xPos,uint8_t yPos,bool drawbg,uint8_t active){
 		if(y==16){
 			draw_text_len(xPos+(23*FONT_W),(yPos+FONT_H)+(y*FONT_H),yes_no[cfg_mobile_mode],COLOR_TEXT,y==active?COLOR_CURRENT_BG:COLOR_BACKGOUND,3);
 		}		
-		#if VGA_HDMI
+		#ifdef VGA_HDMI
 		if((g_out)cfg_video_out>g_out_HDMI){
 			if(y==17){
 				draw_text_len(xPos+(16*FONT_W),(yPos+FONT_H)+(y*FONT_H),gaudge[cfg_brightness],COLOR_TEXT,y==active?COLOR_CURRENT_BG:COLOR_BACKGOUND,10);
@@ -1212,7 +1266,7 @@ bool LoadTxt(char *file_name){
 	size_t bytesToRead;
 	size_t FileSize;
 
-	memset(temp_buffer_y, 0, TEMP_BUFF_SIZE);
+	memset(temp_buffer_y, 0, TEMP_BUFF_SIZE_Y);
 
 	res = sd_open_file(&sd_file,file_name,FA_READ);
 	////printf("sd_open_file=%d\n",res);
@@ -1236,7 +1290,7 @@ bool LoadTxt(char *file_name){
 	sprintf(temp_msg,"File size:%dk",(short int)(FileSize/1024));
 	draw_text_len(18+FONT_W*FILE_NAME_LEN,216, temp_msg,COLOR_TEXT,COLOR_BACKGOUND,22);
 
-	res = sd_read_file(&sd_file,temp_buffer_y,TEMP_BUFF_SIZE-5,&bytesRead);
+	res = sd_read_file(&sd_file,temp_buffer_y,TEMP_BUFF_SIZE_Y-5,&bytesRead);
 	if (res!=FR_OK){sd_close_file(&sd_file);return false;}
 	draw_text_len(18+FONT_W*FILE_NAME_LEN,16,"File contents:",COLOR_TEXT,COLOR_BACKGOUND,14);
 	uint16_t ptr=0;
@@ -1267,7 +1321,7 @@ bool LoadTxt(char *file_name){
 			}
 			ptr+=k;
 		}
-		if(ptr>=TEMP_BUFF_SIZE){break;}
+		if(ptr>=TEMP_BUFF_SIZE_Y){break;}
 		if(ptr>=FileSize){break;}
 	}
 	sd_close_file(&sd_file);
@@ -1568,31 +1622,6 @@ static uint32_t autofire=0;
 static bool autofire_flipX=false;
 static bool autofire_flipY=false;
 
-void reset_kmouse(){
-	zx_write_buffer->kempston=0;
-	zx_write_buffer->kempston_mouse_whl=0xF0;
-	zx_write_buffer->kempston_mouse_btn=0xFF;
-	zx_write_buffer->kempston_mouse_x=0x80;
-	zx_write_buffer->kempston_mouse_y=0x80;
-}
-
-void map_kmouse(struct WIIController* Wii_joy, ZX_Input_t* zx_input){
-	if((Wii_joy->RightX>7)||(Wii_joy->RightX<-7)){zx_input->kempston_mouse_x+=(uint8_t)(Wii_joy->RightX>>5);}
-	if((Wii_joy->RightY>7)||(Wii_joy->RightY<-7)){zx_input->kempston_mouse_y+=(uint8_t)(Wii_joy->RightY>>5);}
-	if (Wii_joy->ButtonR)  zx_input->kempston_mouse_btn&=~1; else zx_input->kempston_mouse_btn|=1;
-	if (Wii_joy->ButtonL)  zx_input->kempston_mouse_btn&=~2; else zx_input->kempston_mouse_btn|=2;
-	if (Wii_joy->ButtonZR) zx_input->kempston_mouse_btn&=~4; else zx_input->kempston_mouse_btn|=4;
-	if (Wii_joy->ButtonZL) zx_input->kempston_mouse_btn&=~8; else zx_input->kempston_mouse_btn|=8;		
-	if((Wii_joy->LeftY>7)||(Wii_joy->LeftY<-7)){
-		if(Wii_joy->LeftY>0) zx_input->kempston_mouse_whl-=(uint8_t)(1<<4);
-		if(Wii_joy->LeftY<0) zx_input->kempston_mouse_whl+=(uint8_t)(1<<4);
-		//printf("kempston_mouse_whl:%02X \n",zx_input->kempston_mouse_whl);
-		zx_input->kempston_mouse_btn&=0x0F;
-		zx_input->kempston_mouse_btn|=zx_input->kempston_mouse_whl;
-		//printf("kempston_mouse_btn:%02X \n",zx_input->kempston_mouse_btn);
-	}
-	
-}
 
 void enter_pause(void){
 	//old_show_hud = show_hud;
@@ -1988,7 +2017,7 @@ int main(void){
 	set_sys_clock_khz(315000, false);
 	#endif
 	*/
-	#if VGA_HDMI
+	#ifdef VGA_HDMI
 		set_sys_clock_khz(315000, false);
 	#endif
 	#if COMPOSITE_TV||SOFT_COMPOSITE_TV
@@ -2217,7 +2246,7 @@ int main(void){
 
 	init_screen(graph_buf,SCREEN_W,SCREEN_H);
 
-	
+	bool (*handler_ptr)(short);
 
 	/*
 	for(uint8_t idx;idx<10;idx++){
@@ -2225,7 +2254,7 @@ int main(void){
 	}
 	*/
 	printf("Begin video init: ");
-	#if VGA_HDMI
+	#ifdef VGA_HDMI
 		/*busy_wait_ms(100);
 		startVGA(cfg_frame_rate);
 		printf("VGA Started\n");*/
@@ -2304,7 +2333,7 @@ int main(void){
 		printf("Video Out Started\n");
 	#endif
 
-	#if COMPOSITE_TV
+	#ifdef COMPOSITE_TV
 		graphics_init(g_TV_OUT_NTSC);
 		graphics_set_buffer(graph_buf);
 		graphics_set_mode(g_mode_320x240x4bpp);
@@ -2317,7 +2346,7 @@ int main(void){
 			graphics_set_palette(i,RGB);
 		}
 	#endif
-	#if SOFT_COMPOSITE_TV
+	#ifdef SOFT_COMPOSITE_TV
 		graphics_set_buffer(graph_buf);
 		#ifndef SOFT_CVBS_NO_HUD
 		graphics_set_hud_buffer(hud_line);
@@ -2345,7 +2374,7 @@ int main(void){
 	current_hud_mode=cfg_hud_enable;
 	old_hud_mode=current_hud_mode;
 
-	#if VGA_HDMI
+	#ifdef VGA_HDMI
 		if(cfg_mobile_mode==MOBILE_MURM_ON){
 			hud_ptr = &hud_battery;
 			current_hud_mode|=HM_SHOW_BATTERY;
@@ -2450,7 +2479,7 @@ int main(void){
 			printf("Enter Boot Screen Mode\n");
 			while(true){
 				while(!wait_kbdjoy_emu()){
-					#if VGA_HDMI
+					#ifdef VGA_HDMI
 					//graphics_update_screen();
 					#endif
 					ticker++;
@@ -2545,7 +2574,8 @@ int main(void){
 			current_hud_mode&=~HM_TAPE_HUD;
 			current_hud_mode&=~HM_KBD_HUD;
 			if(current_hud_mode&HM_SHOW_BATTERY){
-				graphics_set_hud_handler(&hud_battery);
+				handler_ptr=&hud_battery;
+				graphics_set_hud_handler(handler_ptr);
 			} else {
 				graphics_set_hud_handler(NULL);
 			};
@@ -2554,7 +2584,7 @@ int main(void){
 			printf("Enter Menu Mode\n");
 			ticker=0;
 			do{// main menu loop
-				#if VGA_HDMI
+				#ifdef VGA_HDMI
 				//graphics_update_screen();
 				#endif
 				ticker++;
@@ -3207,13 +3237,13 @@ int main(void){
 							continue;
 						}						
 						/*--Return from Menu--*/
-						if(((KBD_DOWN)||(data_joy==D_JOY_DOWN))&&(fast_menu_index<(short int)fast_menu_lines[fast_mode[fast_mode_ptr]])){ fast_menu_index++; need_redraw=true;}
+						if(((KBD_DOWN)||(data_joy==D_JOY_DOWN))&&(fast_menu_index<(short int)fast_menu_lines[(uint8_t)fast_mode[(uint8_t)fast_mode_ptr]])){ fast_menu_index++; need_redraw=true;}
 						if(((KBD_UP)||(data_joy==D_JOY_UP))&&(fast_menu_index>=0)){fast_menu_index--;need_redraw=true;}
 						//начало и конец списка
-						if(((KBD_PAGE_DOWN)||(data_joy==D_JOY_RIGHT))&&(fast_menu_index<(short int)fast_menu_lines[fast_mode[fast_mode_ptr]])){fast_menu_index+=3;need_redraw=true;}
+						if(((KBD_PAGE_DOWN)||(data_joy==D_JOY_RIGHT))&&(fast_menu_index<(short int)fast_menu_lines[(uint8_t)fast_mode[(uint8_t)fast_mode_ptr]])){fast_menu_index+=3;need_redraw=true;}
 						if(((KBD_PAGE_UP)||(data_joy==D_JOY_LEFT))&&(fast_menu_index>0)){fast_menu_index-=3;need_redraw=true;}
-						if (fast_menu_index<0) fast_menu_index=(short int)fast_menu_lines[fast_mode[fast_mode_ptr]]-1;
-						if (fast_menu_index>=(short int)fast_menu_lines[fast_mode[fast_mode_ptr]]) fast_menu_index=0;
+						if (fast_menu_index<0) fast_menu_index=(short int)fast_menu_lines[(uint8_t)fast_mode[(uint8_t)fast_mode_ptr]]-1;
+						if (fast_menu_index>=(short int)fast_menu_lines[(uint8_t)fast_mode[(uint8_t)fast_mode_ptr]]) fast_menu_index=0;
 						if((KBD_ENTER)||(data_joy==D_JOY_A)){
 							need_redraw=true;
 							if(fast_mode[fast_mode_ptr]==FAST_MENU_MAIN){
@@ -3423,7 +3453,8 @@ int main(void){
 							memset(hud_line,0x11,SCREEN_W);
 							resume_pause();
 							current_hud_mode|=HM_KBD_HUD;
-							graphics_set_hud_handler(&hud_prepare_kbd);
+							handler_ptr=&hud_prepare_kbd;
+							graphics_set_hud_handler(handler_ptr);
 							zx_machine_enable_vbuf(true);
 							is_new_screen=false;
 							clear_input();
@@ -3870,7 +3901,7 @@ int main(void){
 										cfg_mobile_mode=DEF_CFG_MOBILE_MODE;
 									}
 								}								
-								#if VGA_HDMI
+								#ifdef VGA_HDMI
 								if((g_out)cfg_video_out>g_out_HDMI){
 									if (settings_index==17){ //LCD BrightLev:
 										cfg_brightness+=menu_inc_dec;
@@ -4110,8 +4141,8 @@ int main(void){
 								continue;
 							}
 							if(btn_pos==4){
-								memset(temp_buffer_x, 0, TEMP_BUFF_SIZE);
-								memset(temp_buffer_y, 0, TEMP_BUFF_SIZE);
+								//memset(temp_buffer_x, 0, TEMP_BUFF_SIZE_X);
+								memset(temp_buffer_y, 0, TEMP_BUFF_SIZE_Y);
 								menu_ptr--;
 								need_redraw=true;
 								is_new_screen=true;
@@ -4629,7 +4660,7 @@ int main(void){
 				if(current_hud_mode&HM_SHOW_KEYLOCK){
 					if(kbd_lock){
 						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
-							#if VGA_HDMI
+							#ifdef VGA_HDMI
 								pwm_set_gpio_level(TFT_LED_PIN,0);			//уровень подсветки TFT
 							#endif
 							//graphics_set_hud_handler(&hud_kb_lock);
@@ -4637,7 +4668,7 @@ int main(void){
 							hud_timer=0;
 						}
 					} else {
-						#if VGA_HDMI						
+						#ifdef VGA_HDMI
 							pwm_set_gpio_level(TFT_LED_PIN,(TFT_MIN_BRIGHTNESS+(cfg_brightness*10)));			//уровень подсветки TFT
 						#endif
 						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
@@ -5121,7 +5152,7 @@ int main(void){
 							//memset(zx_write_buffer->kb_data,0,8);
 							printf("Vol DOWN\n");
 						}
-						#if VGA_HDMI
+						#ifdef VGA_HDMI
 						if(cfg_mobile_mode==MOBILE_MURM_ON){
 							if(hat_switch&HAT_RIGHT){
 								hat_switch&=~HAT_RIGHT;

@@ -1,15 +1,16 @@
 #include "util_pok.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "screen_util.h"
 #include "ps2.h"
 #include "iface.h"
 #include "util_sd.h"
-#include <zx_emu/z80.h>
+#include "zx_emu/z80.h"
 #include "zx_emu/zx_machine.h"
 #include "kb_u_codes.h"
-#include "Joy/Joystics.h"
+#include "../lib/joysticks/Joystics.h"
 #include "small_logo.h"
 
 #define MAX_BTN (2)
@@ -30,8 +31,8 @@ extern uint8_t zx_machine_get_7ffd_lastOut();
 
 extern short int last_error;
 #ifndef DEBUG_DISABLE_LOADERS
-extern uint8_t temp_buffer_x[TEMP_BUFF_SIZE];
-extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE];
+//extern uint8_t temp_buffer_x[TEMP_BUFF_SIZE_X];
+extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
 #endif
 
 extern char temp_msg[60];
@@ -239,15 +240,15 @@ uint8_t PokeValueDialogBox(char *header,char *message,char *value,uint8_t colorF
 
 short int load_pok_captions(char *file_name){
 #ifndef DEBUG_DISABLE_LOADERS
-	memset(temp_buffer_x, 0, TEMP_BUFF_SIZE);
-	memset(temp_buffer_y, 0, TEMP_BUFF_SIZE);
+	//memset(temp_buffer_y, 0, TEMP_BUFF_SIZE_X);
+	memset(temp_buffer_y, 0, TEMP_BUFF_SIZE_Y);
 	size_t bytesRead=0;
 	size_t filePos=0;
 	size_t buffpos=0;
-	size_t bufflen=TEMP_BUFF_SIZE;
+	size_t bufflen=TEMP_BUFF_SIZE_Y;
 	POKE_LINE* pokes = (POKE_LINE*)&temp_buffer_y[0];
 	pokes_buff = (POKE_LINE*)&temp_buffer_y[0];
-	uint8_t* chr = &temp_buffer_x[0];
+	uint8_t* chr = &temp_buffer_y[0];
 	uint8_t* begin=NULL;
 	uint8_t* end=NULL;
 	int poke_count=0;
@@ -257,7 +258,7 @@ short int load_pok_captions(char *file_name){
 	while (filePos<sd_file_size(&sd_file)){
 		sd_res = sd_read_file(&sd_file,chr,bufflen,&bytesRead);
 		if (sd_res!=FR_OK){sd_close_file(&sd_file);break;}
-		while (chr<(&temp_buffer_x[0]+TEMP_BUFF_SIZE)) {
+		while (chr<(&temp_buffer_y[0]+TEMP_BUFF_SIZE_Y)) {
 			if((*chr==0x4E)&&(begin==NULL)){
 				begin = chr;
 			}
@@ -275,7 +276,7 @@ short int load_pok_captions(char *file_name){
 				if((size>0)&&(size<=sizeof(pokes->text))){
 					memcpy(&pokes->text[0],begin+1,size-1);
 					printf(">>>%s\n",pokes->text);
-					if(pokes<(pokes+TEMP_BUFF_SIZE)){
+					if(pokes<(pokes+TEMP_BUFF_SIZE_Y)){
 						pokes++;
 						poke_count++;
 					} else {
@@ -290,13 +291,13 @@ short int load_pok_captions(char *file_name){
 			chr++;
 		}
 		if((end==NULL)){
-			memset(&temp_buffer_x[0], 0, TEMP_BUFF_SIZE);
+			memset(&temp_buffer_y[0], 0, TEMP_BUFF_SIZE_Y);
 			if(begin>0){
-				bufflen=(begin-temp_buffer_x);
+				bufflen=(begin-temp_buffer_y);
 			} else {
-				bufflen=(chr-temp_buffer_x);
+				bufflen=(chr-temp_buffer_y);
 			}									
-			chr = &temp_buffer_x[0];									
+			chr = &temp_buffer_y[0];									
 			filePos+=bufflen;
 			sd_res=sd_seek_file(&sd_file,filePos);
 			if (sd_res!=FR_OK){sd_close_file(&sd_file);break;}
@@ -330,7 +331,7 @@ void apply_poke(POKE_DATA value){
 		}
 	}
 	if((value.page&0x08)==0){
-		ptr = &zx_ram_bank[value.page&0x07];
+		ptr = zx_ram_bank[value.page&0x07]; //&zx_ram_bank[value.page&0x07];
 	} else {
 		write_zx_mem(value.addr,value.new_val&0xFF);
 		//ptr = &zx_ram_bank[0];
@@ -341,13 +342,13 @@ void apply_poke(POKE_DATA value){
 }
 
 void set_pok_values(POKE_LINE* pokes,short int poke_count,char *file_name){
-	memset(temp_buffer_x, 0, TEMP_BUFF_SIZE);
+	memset(temp_buffer_y, 0, TEMP_BUFF_SIZE_Y);
 	POKE_LINE* poke;
-	uint8_t* chr = &temp_buffer_x[0];
+	uint8_t* chr = &temp_buffer_y[0];
 	size_t bytesRead=0;
 	size_t filePos=0;
 	size_t buffpos=0;
-	size_t bufflen=TEMP_BUFF_SIZE;
+	size_t bufflen=TEMP_BUFF_SIZE_Y;
 	bool poke_found=false;
 	uint8_t* begin=NULL;
 	uint8_t* end=NULL;
@@ -357,11 +358,11 @@ void set_pok_values(POKE_LINE* pokes,short int poke_count,char *file_name){
 	POKE_DATA vals;
 
 	sd_res = sd_open_file(&sd_file,file_name,FA_READ);
-	if (sd_res!=FR_OK){sd_close_file(&sd_file); return false;};
+	if (sd_res!=FR_OK){sd_close_file(&sd_file); return;};
 	while (filePos<sd_file_size(&sd_file)){
 		sd_res = sd_read_file(&sd_file,chr,bufflen,&bytesRead);
 		if (sd_res!=FR_OK){sd_close_file(&sd_file);break;}
-		while (chr<(&temp_buffer_x[0]+TEMP_BUFF_SIZE)) {
+		while (chr<(&temp_buffer_y[0]+TEMP_BUFF_SIZE_Y)) {
 			if(!poke_found){
 				if((*chr==0x4E)&&(begin==NULL)){
 					begin = chr;
@@ -434,13 +435,13 @@ void set_pok_values(POKE_LINE* pokes,short int poke_count,char *file_name){
 			chr++;
 		}
 		if((end==NULL)||(end_value==NULL)){
-			memset(&temp_buffer_x[0], 0, TEMP_BUFF_SIZE);
+			memset(&temp_buffer_y[0], 0, TEMP_BUFF_SIZE_Y);
 			if(begin>0){
-				bufflen=(begin-temp_buffer_x);
+				bufflen=(begin-temp_buffer_y);
 			} else {
-				bufflen=(chr-temp_buffer_x);
+				bufflen=(chr-temp_buffer_y);
 			}									
-			chr = &temp_buffer_x[0];									
+			chr = &temp_buffer_y[0];									
 			filePos+=bufflen;
 			sd_res=sd_seek_file(&sd_file,filePos);
 			if (sd_res!=FR_OK){sd_close_file(&sd_file);break;}

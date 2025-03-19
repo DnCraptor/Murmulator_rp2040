@@ -1,9 +1,11 @@
 #include "aySoundSoft.h"
 #include "stdbool.h"
 #include "string.h"
-#include "hw/hw_util.h"
+#include "hardware/timer.h"
+#include <pico.h>
+#include <pico/stdlib.h>
 // #include "AY_PIO_595.h"
-#include "util_cfg.h"
+#include "../util_cfg.h"
 #include "PinSerialData_595.h"
 
 /* send595() 0x4000 -  AY_Enable,Beep - 0x1000,,0x0800 выбор второго чипа АУ, 0x400 выбор первого чипа
@@ -95,7 +97,7 @@ void __not_in_flash_func(AY_select_reg)(uint8_t N_reg){
 			send_to_595(HIGH (BDIR | BC1) | N_reg); 
 			send_to_595( LOW (BDIR |BC1) | N_reg);
 		}
-		//printf("TS CS %d\n",c_chip);
+		//stdio_printf("TS CS %d\n",c_chip);
 		//AY_print_state_debug();
 	} else {
 		c_chip=0;
@@ -104,7 +106,7 @@ void __not_in_flash_func(AY_select_reg)(uint8_t N_reg){
 
 
 void  __not_in_flash_func(AY_reset)(uint8_t s_mode){
-	//printf("AY RST\n");
+	//stdio_printf("AY RST\n");
 	sound_mode=s_mode;
 	ay_regs_t chip;
 	chip.ay_R1_R0=0;
@@ -149,35 +151,35 @@ void  __not_in_flash_func(AY_reset)(uint8_t s_mode){
 };
 
 void AY_print_state_debug(){
-	printf("\n AY SEL %d\n",c_chip);
+	stdio_printf("\n AY SEL %d\n",c_chip);
 	ay_regs_t chip = chips[0];
-	printf("\n AY CHIP 1\n");
-	printf("R1_R0:[%04X]\n",chip.ay_R1_R0);
-	printf("R3_R2:[%04X]\n",chip.ay_R3_R2);
-	printf("R3_R2:[%04X]\n",chip.ay_R5_R4);
-	printf("R6 :[%02X]\n",chip.ay_R6);
-	printf("R7 :[%02X]\n",chip.ay_R7);
-	printf("R8 :[%02X]\n",chip.ay_R8);
-	printf("R9 :[%02X]\n",chip.ay_R9);
-	printf("R10:[%02X]\n",chip.ay_R10);
-	printf("R12_R11:[%04X]\n",chip.ay_R12_R11);
-	printf("R13:[%02X]\n",chip.ay_R13);
-	printf("R14:[%02X]\n",chip.ay_R14);
-	printf("R15:[%02X]\n",chip.ay_R15);
+	stdio_printf("\n AY CHIP 1\n");
+	stdio_printf("R1_R0:[%04X]\n",chip.ay_R1_R0);
+	stdio_printf("R3_R2:[%04X]\n",chip.ay_R3_R2);
+	stdio_printf("R3_R2:[%04X]\n",chip.ay_R5_R4);
+	stdio_printf("R6 :[%02X]\n",chip.ay_R6);
+	stdio_printf("R7 :[%02X]\n",chip.ay_R7);
+	stdio_printf("R8 :[%02X]\n",chip.ay_R8);
+	stdio_printf("R9 :[%02X]\n",chip.ay_R9);
+	stdio_printf("R10:[%02X]\n",chip.ay_R10);
+	stdio_printf("R12_R11:[%04X]\n",chip.ay_R12_R11);
+	stdio_printf("R13:[%02X]\n",chip.ay_R13);
+	stdio_printf("R14:[%02X]\n",chip.ay_R14);
+	stdio_printf("R15:[%02X]\n",chip.ay_R15);
 	chip = chips[1];
-	printf("\n AY CHIP 2\n");
-	printf("R1_R0:[%04X]\n",chip.ay_R1_R0);
-	printf("R3_R2:[%04X]\n",chip.ay_R3_R2);
-	printf("R3_R2:[%04X]\n",chip.ay_R5_R4);
-	printf("R6 :[%02X]\n",chip.ay_R6);
-	printf("R7 :[%02X]\n",chip.ay_R7);
-	printf("R8 :[%02X]\n",chip.ay_R8);
-	printf("R9 :[%02X]\n",chip.ay_R9);
-	printf("R10:[%02X]\n",chip.ay_R10);
-	printf("R12_R11:[%04X]\n",chip.ay_R12_R11);
-	printf("R13:[%02X]\n",chip.ay_R13);
-	printf("R14:[%02X]\n",chip.ay_R14);
-	printf("R15:[%02X]\n",chip.ay_R15);
+	stdio_printf("\n AY CHIP 2\n");
+	stdio_printf("R1_R0:[%04X]\n",chip.ay_R1_R0);
+	stdio_printf("R3_R2:[%04X]\n",chip.ay_R3_R2);
+	stdio_printf("R3_R2:[%04X]\n",chip.ay_R5_R4);
+	stdio_printf("R6 :[%02X]\n",chip.ay_R6);
+	stdio_printf("R7 :[%02X]\n",chip.ay_R7);
+	stdio_printf("R8 :[%02X]\n",chip.ay_R8);
+	stdio_printf("R9 :[%02X]\n",chip.ay_R9);
+	stdio_printf("R10:[%02X]\n",chip.ay_R10);
+	stdio_printf("R12_R11:[%04X]\n",chip.ay_R12_R11);
+	stdio_printf("R13:[%02X]\n",chip.ay_R13);
+	stdio_printf("R14:[%02X]\n",chip.ay_R14);
+	stdio_printf("R15:[%02X]\n",chip.ay_R15);
 	
 };
 

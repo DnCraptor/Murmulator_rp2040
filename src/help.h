@@ -439,8 +439,7 @@ const char* __in_flash() help_text[2][HELP_LINES]={{
 "                           and overwrite the settings file ",
 " [SAVE]     - Save settings to SD card                     ",
 " [UPDATE FIRMWARE] - Reboot to firmware update mode        ",
-" [!!!REBOOT!!!] - Restart the controller                   ",
-"                                                           ",
+" [!!!REBOOT!!!] - Restart the controller                   "
 }
 };
 

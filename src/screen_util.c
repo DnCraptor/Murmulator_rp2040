@@ -1,4 +1,5 @@
 #include "globals.h"
+#include <string.h>
 #include "screen_util.h"
 #include "font8x8.h"
 #include "font5x7.h"
@@ -327,4 +328,10 @@ void draw_bufline_text5x7_len(uint8_t* ptr, int line,char* text,color_t colorTex
 		}
 		inx_symb++;
 	}
+}
+
+
+void draw_logo_header(short int xPos,short int yPos){
+	draw_stripes(xPos, yPos);
+	draw_text_len(xPos+SPEC_LOGO_W,yPos,"MURMULATOR",COLOR_ITEXT,CL_EMPTY,10);
 }

@@ -1,3 +1,5 @@
+#include "pico.h"
+#include <stdio.h>
 #include "util_power.h"
 
 #include "inttypes.h"

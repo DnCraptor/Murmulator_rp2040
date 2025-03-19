@@ -1,5 +1,4 @@
 #pragma once
-
 #include "inttypes.h"
 #include "stdbool.h"
 #include <string.h>

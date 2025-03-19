@@ -1,13 +1,13 @@
-#include "hardware/dma.h"
+#include "pico.h"
 #include "ps2.h"
+#include "hardware/dma.h"
 #include "kb_u_codes.h"
 #include "string.h"
 #include "globals.h"
 #include "hardware/clocks.h"
-
 #include "hardware/structs/pll.h"
 #include "hardware/structs/systick.h"
-#include "hardware/dma.h"
+#include "hardware/structs/dma.h"
 #include "hardware/irq.h"
 
 //#define FAST_FUNC __not_in_flash_func

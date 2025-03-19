@@ -10,6 +10,8 @@
 #include "util_i2c_PCF857X.h"
 #include "util_i2c_MCP23017.h"
 
+uint8_t i2c_joy_data[16];
+
 void i2c_joy_init(int CLOCK_I2C){
 	i2c_init(i2c_joy_port, CLOCK_I2C*1000);
 	gpio_set_function(PICO_I2C_JOY_SDA_PIN, GPIO_FUNC_I2C);

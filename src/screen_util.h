@@ -82,3 +82,4 @@ void draw_text5x7(int x,int y,char* text,color_t colorText,color_t colorBg);
 void draw_text5x7_len(int x,int y,char* text,color_t colorText,color_t colorBg,int len);
 void draw_bufline_text_len(uint8_t* ptr, int line, char* text,color_t colorText,color_t colorBg, int len);
 void draw_bufline_text5x7_len(uint8_t* ptr, int line,char* text,color_t colorText,color_t colorBg,int len);
+void draw_logo_header(short int xPos,short int yPos);

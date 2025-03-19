@@ -80,22 +80,30 @@ typedef struct{
 }  WD1793_struct;
 
 
+extern bool TRDOS_mode; 		// Информационный сигнал Текущий режим - ROM TRDOS или стандартный ROM 48k
+extern bool TRDOS_disabled; 	// Управляющий сигнал Запрет входить в TRDOS
+extern uint8_t WD1793_Status;
+extern uint8_t Requests;
+extern uint8_t wd1793_PortFF;
+extern WD1793_struct WD1793;
+extern uint8_t NewCommandReceived;
+
+
+
 void WD1793_Reset(uint8_t drive);
 void WD1793_Execute();
 
-bool TRDOS_mode; 		// Информационный сигнал Текущий режим - ROM TRDOS или стандартный ROM 48k
-bool TRDOS_disabled; 	// Управляющий сигнал Запрет входить в TRDOS
 
-uint8_t WD1793_Status;
+
 
 //extern uint8_t Requests;
-uint8_t Requests;
+
 
 inline uint8_t WD1793_GetRequests(){ // 7th bit - INTRQ, 6th - DRQ
 	return Requests;
 }
 
-uint8_t wd1793_PortFF;
+
 #define GET_DRIVE() (wd1793_PortFF & 0b11)
 #define SIDE_PIN 4
 #define GET_SIDE() ((~wd1793_PortFF & _BV(SIDE_PIN))>>SIDE_PIN)
@@ -112,8 +120,7 @@ void WD1793_Cmd_ReadTrack();
 void WD1793_Cmd_WriteTrack();
 void WD1793_CmdStartReadingSector();
 
-WD1793_struct WD1793;
-uint8_t NewCommandReceived;
+
 
 uint8_t WD1793_Read(uint8_t Address);
 void WD1793_Write(uint8_t Address, uint8_t Value);

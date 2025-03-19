@@ -14,21 +14,21 @@ typedef struct FileRec{
 	uint8_t attr;
 } __attribute__((packed)) FileRec;
 
-int file_descr; // индикатор ошибки чтения файла
-static FATFS fs;
-FIL sd_file;
-DIR sd_dir;
-FILINFO sd_file_info;
-FRESULT sd_res;
-size_t sd_f_size;
-
-char dirs[DIRS_DEPTH+5][FILE_NAME_LEN];
-char files[MAX_FILES+5][FILE_NAME_LEN];
-char dir_path[(DIRS_DEPTH+5)*FILE_NAME_LEN];
-char activefilename[400];
-char afilename[FILE_NAME_LEN+1];
-uint8_t sd_buffer[SD_BUFFER_SIZE]; //буфер для работы с файлами
-char filename[260];
+extern int file_descr; // индикатор ошибки чтения файла
+extern FATFS fs;
+extern FIL sd_file;
+extern DIR sd_dir;
+extern FILINFO sd_file_info;
+extern FRESULT sd_res;
+extern size_t sd_f_size;
+ 
+extern char dirs[DIRS_DEPTH+5][FILE_NAME_LEN];
+extern char files[MAX_FILES+5][FILE_NAME_LEN];
+extern char dir_path[(DIRS_DEPTH+5)*FILE_NAME_LEN];
+extern char activefilename[400];
+extern char afilename[FILE_NAME_LEN+1];
+extern uint8_t sd_buffer[SD_BUFFER_SIZE]; //буфер для работы с файлами
+extern char filename[260];
 
 #define TOP_DIR_ATTR 0x40
 #define SELECTED_FILE_ATTR 0x80

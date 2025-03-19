@@ -4,7 +4,7 @@
 
 #define TRDOS_COMPILE
 
-#define FW_VERSION "v0.96.17"
+#define FW_VERSION "v0.96.18"
 #define FW_AUTHOR "TecnoCat"
 
 #define SCREEN_H (240)
@@ -31,6 +31,9 @@
 #define MAX_JOY_MODE 5
 #define MAX_KBD_MODE 5
 
+extern char buf[10];			//временный буфер
+extern char header_buf[87];	// буфер для чтения заголовка
+
 extern char temp_msg[60]; // Буфер для вывода строк
 extern uint8_t save_slots[11];
 extern bool show_slots;
@@ -43,7 +46,8 @@ extern bool kbd_lock;
 
 
 
-#define TEMP_BUFF_SIZE 0x0A00
+#define TEMP_BUFF_SIZE_X 0x0800
+#define TEMP_BUFF_SIZE_Y 0x0A00
 
 //#define NUM_V_BUF (3)
 #ifdef NUM_V_BUF
@@ -57,8 +61,8 @@ extern uint8_t graph_buf[];
 extern uint8_t hud_line[];
 extern uint8_t color_zx[16];
 
-extern uint8_t temp_buffer_x[TEMP_BUFF_SIZE];
-extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE];
+//extern uint8_t temp_buffer_x[TEMP_BUFF_SIZE_X];
+extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
 
 int	null_printf(const char *str, ...);
 

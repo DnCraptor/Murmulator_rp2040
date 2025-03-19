@@ -30,3 +30,5 @@ void draw_pokes_list(POKE_LINE* pokes, short int poke_count,short int startLine,
 void draw_pokes_bottom_btn(uint8_t xPos,uint8_t yPos,uint8_t dia_pos);
 void set_pok_values(POKE_LINE* pokes,short int poke_count,char *file_name);
 void draw_poke_menu(uint8_t xPos,uint8_t yPos,bool drawbg,char* text_src,uint8_t lines,uint8_t active);
+uint8_t read_zx_mem(uint16_t addr);
+void write_zx_mem(uint16_t addr, uint8_t val);

@@ -1,5 +1,10 @@
+#include "pico.h"
+#include "pico/time.h"
 #include "globals.h"
 #include <stdalign.h> //Выравнивание массивов в памяти
+
+char buf[10];			//временный буфер
+char header_buf[87];	// буфер для чтения заголовка
 
 char temp_msg[60]; // Буфер для вывода строк
 uint8_t save_slots[11];
@@ -27,8 +32,8 @@ bool zx_screen_refresh;
 
 
 #ifndef DEBUG_DISABLE_LOADERS
-    uint8_t __scratch_x("temp_data_x") temp_buffer_x[TEMP_BUFF_SIZE];
-    uint8_t __scratch_y("temp_data_y") temp_buffer_y[TEMP_BUFF_SIZE];
+    //__scratch_x("temp_data_x") uint8_t temp_buffer_x[TEMP_BUFF_SIZE_X];
+    __scratch_y("temp_data_y") uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
 #endif
 
 

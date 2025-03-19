@@ -1,10 +1,11 @@
 #include "util_z80.h"
 #include "util_sd.h"
 #include <string.h>
-#include <zx_emu/z80.h>
+#include "zx_emu/z80.h"
 #include "zx_emu/aySoundSoft.h"
 #include "zx_emu/zx_machine.h"
 #include "screen_util.h"
+#include "globals.h"
 
 //#define DUMP_PAGES_V1
 //#define DUMP_PAGES_V2
@@ -74,8 +75,8 @@ typedef struct MemBlock{
 
 
 					//индикатор ошибки чтения файла
-char buf[10];			//временный буфер
-char header_buf[87];	// буфер для чтения заголовка
+extern char buf[10];			//временный буфер
+extern char header_buf[87];	// буфер для чтения заголовка
 
 void readAYState(FileHeader* header){
 	for (uint8_t i=0;i<16;i++){

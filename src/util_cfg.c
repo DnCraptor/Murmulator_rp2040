@@ -1,3 +1,4 @@
+#include "pico.h"
 #include "inttypes.h"
 #include "stdbool.h"
 #include <stdio.h>
@@ -8,11 +9,35 @@
 #include "string.h"
 #include "util_cfg.h"
 
+
+uint8_t cfg_boot_scr;
+uint8_t cfg_hud_enable;
+uint8_t cfg_tap_load_mode;
+uint8_t cfg_tape_load_pin;
+uint8_t cfg_def_joy1_mode;
+uint8_t cfg_def_joy2_mode;
+uint8_t cfg_def_kbd_mode;
+uint8_t cfg_res_before_mode;
+uint8_t cfg_sound_out_mode;
+uint8_t cfg_sound_mode;
+short int cfg_volume;
+uint8_t cfg_tspin_mode;
+uint8_t cfg_tsspeed_mode;
+uint8_t cfg_tschip_order;
+uint8_t cfg_video_out;
+uint8_t cfg_frame_rate;
+uint8_t cfg_lcd_video_out;
+uint8_t cfg_rotate;
+uint8_t cfg_inversion;
+uint8_t cfg_pixels;
+uint8_t cfg_brightness;
+uint8_t cfg_mobile_mode;
+
 //bool cfg_auto_load_tap = false;
 //bool cfg_fast_load_tap = false;
 //uint8_t cfg_def_joy_mode = 0;
 
-const char __in_flash() *default_config_file[]={
+const char __in_flash()*default_config_file[]={
 ";version:"FW_VERSION" \r\n\0",
 "; [Boot logo display]\r\n\0",
 "; 0 - SHOW LOGO \r\n\0",
@@ -123,7 +148,7 @@ const char __in_flash() *default_config_file[]={
 "\0",
 };
 
-const uint8_t load_pins [2] = {22,29};
+const uint8_t load_pins[2] = {22,29};
 
 const char cfg_version[24] = ";version:"FW_VERSION"\0";
 
@@ -426,7 +451,7 @@ bool config_read() {
 }
 
 // Dump actual config to FS
-bool config_save() {
+bool config_save(){
 	int fd=0;
 	uint8_t chr;
 	uint16_t lineptr=0;
@@ -686,7 +711,7 @@ bool config_save() {
 	return true;
 } 
 
-bool config_write_defaults() {
+bool config_write_defaults(){
 	int fd=0;
 	size_t bytesRead;
 	UINT bytesToRead;
@@ -727,7 +752,7 @@ bool config_write_defaults() {
 	while(strlen(default_config_file[ptr])>0) { //while(*default_config_file[ptr]>0) {
 		bytesToWrite = strlen(default_config_file[ptr]);
 		////printf("BTW:%d > %s\n",bytesToWrite,default_config_file[ptr]);
-		fd = sd_write_file(&sd_file,default_config_file[ptr], bytesToWrite,&bytesWritten);
+		fd = sd_write_file(&sd_file,default_config_file[ptr],bytesToWrite,&bytesWritten);
 		//printf(" file write:%d %s\n",fd,default_config_file[ptr]);
 		if (fd!=FR_OK){
 			//printf("ERROR file close:%d %s\n",fd,activefilename);
@@ -743,3 +768,4 @@ bool config_write_defaults() {
 	printf("Config saved OK\n");
 	return true;	
 }
+
