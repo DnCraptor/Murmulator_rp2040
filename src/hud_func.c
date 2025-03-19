@@ -1,6 +1,5 @@
 #include "hud_func.h"
 
-
 uint8_t tape_disp=0;
 uint8_t old_tape_disp=0;
 

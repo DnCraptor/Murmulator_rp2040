@@ -10,6 +10,19 @@
 #include "util_i2c_kbd_markup.h"
 #include "globals.h"
 
+kbd_markup *layout;
+
+static uint8_t cnt_dev;
+
+uint8_t ibuff[KEY_ARRAY_SIZE_RP2040];				// буфер для данных  из USB RP2040 to i2c
+uint8_t i2c_dev[MAX_QNT_DEVICES];
+uint8_t i2c_data[KEY_ARRAY_SIZE*MAX_QNT_DEVICES];
+uint8_t val[2] ;
+uint8_t scan;
+uint8_t oldscan;
+int state;
+
+
 /*
 adress		A0		A1		A2
 			-		-		-	0x20

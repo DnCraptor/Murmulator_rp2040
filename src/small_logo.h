@@ -1,5 +1,6 @@
 #pragma once
 #include "inttypes.h"
+#include "screen_util.h"
 
 #define SPEC_LOGO_H (8)
 #define SPEC_LOGO_W (40)

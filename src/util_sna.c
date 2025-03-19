@@ -1,9 +1,10 @@
 #include "util_sna.h"
 #include "util_sd.h"
 #include <string.h>
-#include <zx_emu/z80.h>
+#include "zx_emu/z80.h"
 #include "zx_emu/zx_machine.h"
 #include "screen_util.h"
+#include "globals.h"
 
 /*
 	Формат файлов .sna
@@ -96,8 +97,8 @@ extern void zx_machine_set_7ffd_out(uint8_t val);
 extern uint8_t sd_buffer[SD_BUFFER_SIZE];
 extern int last_error;
 
-char buf[10];			    // временный буфер
-char header_buf[87];		// буфер для чтения заголовка
+extern char buf[10];			    // временный буфер
+extern char header_buf[87];		// буфер для чтения заголовка
 static uint8_t last_out_7ffd;      // порт банков памяти
 
 

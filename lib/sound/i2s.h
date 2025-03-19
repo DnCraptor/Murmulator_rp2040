@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 #include "inttypes.h"
 
 #define PIO_I2S pio1

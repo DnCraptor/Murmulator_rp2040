@@ -1,6 +1,10 @@
+#include "pico.h"
 #include "z80.h"
+#include "../globals.h"
 
 #define Z80_DEBUG
+
+
 
 extern z80 cpu;
 
@@ -162,7 +166,7 @@ static inline bool parity(uint8_t val) {
 	return (nb_one_bits & 1) == 0;
 }
 
-static void __not_in_flash_func(exec_opcode)(z80* const z, uint8_t opcode);
+static void FAST_FUNC(exec_opcode)(z80* const z, uint8_t opcode);
 static void exec_opcode_cb(z80* const z, uint8_t opcode);
 static void exec_opcode_dcb(z80* const z, const uint8_t opcode, const uint16_t addr);
 static void exec_opcode_ed(z80* const z, uint8_t opcode);
@@ -783,7 +787,7 @@ void z80_init(z80* const z) {
 }
 
 // executes the next instruction in memory + handles interrupts
-void __not_in_flash_func(z80_step)(z80* const z) {
+void FAST_FUNC(z80_step)(z80* const z) {
 	if (z->halted) {
 		z->cyc+=4;
 		//exec_opcode(z, 0x00);
@@ -830,7 +834,7 @@ extern void z80_gen_int(z80* const z, uint8_t data) {
 }
 
 // executes a non-prefixed opcode
-void __not_in_flash_func(exec_opcode)(z80* const z, uint8_t opcode) {
+void FAST_FUNC(exec_opcode)(z80* const z, uint8_t opcode) {
 	z->cyc += cyc_00[opcode];
 	inc_r(z);
 	switch (opcode) {

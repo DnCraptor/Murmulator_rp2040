@@ -6,7 +6,7 @@
 #include "zx_machine.h"
 #include "aySoundSoft.h"
 
-#include "util.h"
+//#include "util.h"
 #include "zx_ROM.h"
 #include "128-0.h" // 128k
 #include "128-1.h" // 48k
@@ -18,8 +18,8 @@
 #include "../globals.h"
 #include "hardware/structs/systick.h"
 #include "hardware/clocks.h"
-#include "wd1793.h"
-#include "util_tap.h"
+#include "../wd1793.h"
+#include "../util_tap.h"
 
 /*
 #if VGA_HDMI
@@ -74,9 +74,14 @@ typedef struct zx_vbuf_t{
 zx_vbuf_t zx_vbuf[ZX_NUM_GBUF];
 zx_vbuf_t* zx_vbuf_active;
 
-
 //выделение памяти может быть изменено в зависимости от платформы
 uint8_t RAM[16384*8]; //Реальная память куском 128Кб
+
+
+uint32_t __not_in_flash_func(get_ticks)(){
+    return (uint32_t)(0xffffff-((uint32_t)systick_hw->cvr))&0xffffff;
+}
+
 
 uint8_t FAST_FUNC(zx_keyboardDecode)(uint8_t addrH){
 	

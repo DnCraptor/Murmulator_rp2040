@@ -112,7 +112,7 @@ const char __in_flash() *ts_chip_config[2]={
 	" Chip 2 "
 };
 
-#if VGA_HDMI
+#ifdef VGA_HDMI
 const char __in_flash() *video_out_config[8]={
 	"   AUTO   ",
 	"   VGA    ",
@@ -140,7 +140,7 @@ const char __in_flash() *video_out_pixels[2]={
 
 #endif
 
-#if COMPOSITE_TV
+#ifdef COMPOSITE_TV
 const char __in_flash() *video_out_config[3]={
 	"   AUTO   ",
 	"   NTSC   ",
@@ -148,7 +148,7 @@ const char __in_flash() *video_out_config[3]={
 };
 #endif
 
-#if SOFT_COMPOSITE_TV
+#ifdef SOFT_COMPOSITE_TV
 const char __in_flash() *video_out_config[3]={
 	"   AUTO   ",
 	"   NTSC   ",

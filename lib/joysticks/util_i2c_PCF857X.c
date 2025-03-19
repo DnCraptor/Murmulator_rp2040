@@ -7,18 +7,18 @@
 #include "util_i2c_PCF857X.h"
 #include "util_i2c_joy.h"
 
-uint8_t i2c_data[16];
+extern uint8_t i2c_joy_data[16];
 
 uint32_t i2c_PCF_8button(){
         uint32_t result= 0xffff00ff;
-        i2c_read_blocking(i2c_joy_port, I2C_PCF8574_8BUTTON_ADDR, &i2c_data[0], 1, false);
-        result |= ((uint32_t)i2c_data[0]<<8);
+        i2c_read_blocking(i2c_joy_port, I2C_PCF8574_8BUTTON_ADDR, &i2c_joy_data[0], 1, false);
+        result |= ((uint32_t)i2c_joy_data[0]<<8);
     return ~result;
 };
 uint32_t i2c_PCF_16button(){
         uint32_t result= 0xffff0000;
-        i2c_read_blocking(i2c_joy_port, I2C_PCF_16BUTTON_ADDR, &i2c_data[0], 2, false);
-        result |= ((uint32_t)i2c_data[0]<<8)|i2c_data[1];
+        i2c_read_blocking(i2c_joy_port, I2C_PCF_16BUTTON_ADDR, &i2c_joy_data[0], 2, false);
+        result |= ((uint32_t)i2c_joy_data[0]<<8)|i2c_joy_data[1];
     return ~result;
 };
 uint32_t i2c_PCF_NES_joy(){
@@ -33,12 +33,12 @@ uint32_t i2c_PCF_NES_joy(){
         for(int i=0; i<QNT_IMP_NES; i++ )
         {            
             ret = i2c_write_blocking(i2c_joy_port, I2C_PCF_NES_JOY_ADDR, &high_clk[0], 2, true);
-            ret = i2c_read_blocking(i2c_joy_port, I2C_PCF_NES_JOY_ADDR, &i2c_data[0], 1, true);
+            ret = i2c_read_blocking(i2c_joy_port, I2C_PCF_NES_JOY_ADDR, &i2c_joy_data[0], 1, true);
             ret = i2c_write_blocking(i2c_joy_port, I2C_PCF_NES_JOY_ADDR, &low_clk[0], 2, true);
             joy1 <<= 1;
             joy2 <<= 1;
-            joy1 |= (0x01 & i2c_data[0]);
-            joy2 |= ((0x02 & i2c_data[0])>>1);                                
+            joy1 |= (0x01 & i2c_joy_data[0]);
+            joy2 |= ((0x02 & i2c_joy_data[0])>>1);                                
          }
     ret = i2c_write_blocking(i2c_joy_port, I2C_PCF_NES_JOY_ADDR, &high_clk[0], 2, false);     
     result = (joy2<<16)|joy1;
@@ -56,18 +56,18 @@ uint32_t i2c_PCF_SEGA_joy(){
 
         for(int i=0; i<4; i++ ){
             ret = i2c_write_blocking(i2c_joy_port, I2C_PCF_SEGA_JOY_ADDR, &val[0], 2, true);
-            ret = i2c_read_blocking(i2c_joy_port, I2C_PCF_SEGA_JOY_ADDR, &i2c_data[i*4], 2, true); 
+            ret = i2c_read_blocking(i2c_joy_port, I2C_PCF_SEGA_JOY_ADDR, &i2c_joy_data[i*4], 2, true); 
             ret = i2c_write_blocking(i2c_joy_port, I2C_PCF_SEGA_JOY_ADDR, &val[2], 2, true);
-            ret = i2c_read_blocking(i2c_joy_port, I2C_PCF_SEGA_JOY_ADDR, &i2c_data[(i*4)+2], 2, true);  
+            ret = i2c_read_blocking(i2c_joy_port, I2C_PCF_SEGA_JOY_ADDR, &i2c_joy_data[(i*4)+2], 2, true);  
         }
         ret = i2c_write_blocking(i2c_joy_port, I2C_PCF_SEGA_JOY_ADDR, &val[0], 2, false);
 
-        uint8_t temp0 = ~i2c_data[0];
-        uint8_t temp1 = ~i2c_data[1];
-        uint8_t temp2 = ~i2c_data[2];
-        uint8_t temp3 = ~i2c_data[3];
-        uint8_t temp12 = ~i2c_data[12];
-        uint8_t temp13 = ~i2c_data[13];
+        uint8_t temp0 = ~i2c_joy_data[0];
+        uint8_t temp1 = ~i2c_joy_data[1];
+        uint8_t temp2 = ~i2c_joy_data[2];
+        uint8_t temp3 = ~i2c_joy_data[3];
+        uint8_t temp12 = ~i2c_joy_data[12];
+        uint8_t temp13 = ~i2c_joy_data[13];
         // первый джойстик
             if (temp0&0x08)	        { result|=0x00000100;}              //right
             if (temp0&0x04)	        { result|=0x00000200;}              //left
@@ -103,7 +103,7 @@ uint32_t i2c_PCF_SEGA_joy(){
 };
 bool init_PCF857X(uint8_t ADDR){ 
     int ret;
-    ret = i2c_read_blocking(i2c_joy_port, ADDR, &i2c_data[0], 2, true);
+    ret = i2c_read_blocking(i2c_joy_port, ADDR, &i2c_joy_data[0], 2, true);
     if (ret != 2){return false;}
     return true;
 };

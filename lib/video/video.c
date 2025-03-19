@@ -13,9 +13,9 @@
 #include "pico/stdlib.h"
 #include "stdlib.h"
 
-#include "globals.h"
+#include "../../src/globals.h"
 
-#include "hud_func.h"
+#include "../../src/hud_func.h"
 
 #ifndef SCREEN_WIDTH
 #define SCREEN_WIDTH 320
@@ -180,7 +180,7 @@ typedef struct G_BUFFER{
 	int shift_y;
 	uint8_t* data;
 	uint8_t* overlay;
-	bool (*handler)(int line);
+	bool (*handler)(short line);
 	uint8_t rotate;
 	bool inversion;
 	uint8_t pix_format;
@@ -1063,7 +1063,7 @@ void graphics_set_buffer(uint8_t *buffer){
 void graphics_set_hud_buffer(uint8_t *buffer){
 	g_buf.overlay = buffer;
 }
-void graphics_set_hud_handler(bool (*handler)()){
+void graphics_set_hud_handler(bool (*handler)(short)){
 	g_buf.handler = handler;
 }
 

@@ -15,7 +15,8 @@ int null_printf(const char *str, ...);
 #endif
 
 
-
+#include <pico.h>
+#include "pico/time.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,6 +57,15 @@ int null_printf(const char *str, ...);
 
 //#define  MIN(a,b) ((a<b)?(a):(b))
 
+bool TRDOS_mode; 		// Информационный сигнал Текущий режим - ROM TRDOS или стандартный ROM 48k
+bool TRDOS_disabled; 	// Управляющий сигнал Запрет входить в TRDOS
+uint8_t WD1793_Status;
+uint8_t Requests;
+uint8_t wd1793_PortFF;
+WD1793_struct WD1793;
+uint8_t NewCommandReceived;
+
+
 const uint8_t Turbo = 1; //0;
 uint32_t Delay; //in timer ticks
 
@@ -79,7 +89,7 @@ uint8_t SelectedDrive;
 char* SelectedImage;
 
 #ifndef DEBUG_DISABLE_LOADERS
-extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE];
+extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
 #endif
 
 extern char dir_path[];
@@ -195,7 +205,7 @@ bool LoadScreenFromTRD(char *file_name){
 	if (res!=FR_OK){sd_close_file(&sd_file);return false;}
    	TrdFileSize = sd_file_size(&sd_file);
     ////debug_printf(".TRD Filesize %u bytes\n", TrdFileSize);
-	res = sd_read_file(&sd_file,temp_buffer_y,TEMP_BUFF_SIZE,&bytesRead);
+	res = sd_read_file(&sd_file,temp_buffer_y,TEMP_BUFF_SIZE_Y,&bytesRead);
 	uint16_t idx=0;
 	for(uint8_t i=0;i<TRD_BLK_SIZE;i++){
 		TRDFNames* trd_file = (TRDFNames*) &temp_buffer_y[(i*0x10)];
@@ -298,7 +308,7 @@ void WD1793_timer(uint32_t dtcpu){ // Вызывается из другого �
 	TCNT1 += 1;//(time_us_32()-passed); //dtcpu / 1.7;
     if (TCNT1 >= INDEX_COUNTER_TIME){ //INDEX_COUNTER_TIME) //100000
 		//debug_
-		printf("time pass %d \n",time_us_32()-passed);
+		printf("time pass %d \n",(time_us_32()-passed));
 		passed=time_us_32();
 		printf("[299]TCNT OVF %d \n",TCNT1 - INDEX_COUNTER_TIME);
 		TCNT1 = TCNT1 - INDEX_COUNTER_TIME;

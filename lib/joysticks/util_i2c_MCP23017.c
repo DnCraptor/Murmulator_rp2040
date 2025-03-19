@@ -5,7 +5,7 @@
 #include "util_i2c_MCP23017.h"
 #include "util_i2c_joy.h"
 
-uint8_t i2c_data[16];
+extern uint8_t i2c_joy_data[16];
 
 
 
@@ -47,10 +47,10 @@ static bool mcp23017_write(uint8_t ADDR, uint8_t reg, const uint8_t* buf, size_t
 
 uint32_t i2c_MCP_16button(){
     uint32_t result;
-    u_int8_t reg = MCP_REG_GPIOA;
+    uint8_t reg = MCP_REG_GPIOA;
     size_t n = 2;
     uint8_t ADDR = MCP_16BUTTON_ADDR;
-    if(mcp23017_read(ADDR,reg,&i2c_data[0],n)){result = ((uint32_t)i2c_data[0]<<8)|i2c_data[1];}
+    if(mcp23017_read(ADDR,reg,&i2c_joy_data[0],n)){result = ((uint32_t)i2c_joy_data[0]<<8)|i2c_joy_data[1];}
     return ~result;
 }
 uint32_t i2c_MCP_NES_joy(){
@@ -70,12 +70,12 @@ uint32_t i2c_MCP_NES_joy(){
         for(int i=0; i<QNT_IMP_NES; i++ )
         {            
             mcp23017_write(ADDR, reg, &val[4] ,n);
-            mcp23017_read(ADDR,reg,&i2c_data[0],n);
+            mcp23017_read(ADDR,reg,&i2c_joy_data[0],n);
             mcp23017_write(ADDR, reg, &val[0] ,n);
             joy1 <<= 1;
             joy2 <<= 1;
-            joy1 |= (0x01 & i2c_data[0]);
-            joy2 |= ((0x02 & i2c_data[0])>>1);                                
+            joy1 |= (0x01 & i2c_joy_data[0]);
+            joy2 |= ((0x02 & i2c_joy_data[0])>>1);                                
          }
     mcp23017_write(ADDR,reg,&val[4],n);       
     result = (joy2<<16)|joy1;
@@ -91,18 +91,18 @@ uint32_t i2c_MCP_SEGA_joy(){
     uint8_t n = 2;
         for(int i=0; i<4; i++ ){
             mcp23017_write(ADDR, reg, &val[0] ,n);
-            mcp23017_read(ADDR,reg,&i2c_data[i*4],n);        
+            mcp23017_read(ADDR,reg,&i2c_joy_data[i*4],n);        
             mcp23017_write(ADDR, reg, &val[2] ,n);
-            mcp23017_read(ADDR,reg,&i2c_data[(i*4)+2],n);                  
+            mcp23017_read(ADDR,reg,&i2c_joy_data[(i*4)+2],n);                  
         }
         mcp23017_write(ADDR, reg, &val[0] ,n);
 
-        uint8_t temp0 = ~i2c_data[0];
-        uint8_t temp1 = ~i2c_data[1];
-        uint8_t temp2 = ~i2c_data[2];
-        uint8_t temp3 = ~i2c_data[3];
-        uint8_t temp12 = ~i2c_data[12];
-        uint8_t temp13 = ~i2c_data[13];
+        uint8_t temp0 = ~i2c_joy_data[0];
+        uint8_t temp1 = ~i2c_joy_data[1];
+        uint8_t temp2 = ~i2c_joy_data[2];
+        uint8_t temp3 = ~i2c_joy_data[3];
+        uint8_t temp12 = ~i2c_joy_data[12];
+        uint8_t temp13 = ~i2c_joy_data[13];
         // первый джойстик
             if (temp0&0x08)	        { result|=0x00000100;}              //right
             if (temp0&0x04)	        { result|=0x00000200;}              //left

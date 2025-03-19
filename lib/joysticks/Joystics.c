@@ -8,6 +8,9 @@
 #include "util_i2c_joy.h"
 #include "util_i2c_MCP23017.h"
 
+PresentJoystics Joystics;
+DataJoystics Joy_data;
+
 uint32_t maskfornes;
  
 void data_joy_input(int Type_Joy){

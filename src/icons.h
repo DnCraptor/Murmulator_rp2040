@@ -115,21 +115,21 @@ static const uint16_t icon_map_xcoord[9]={
 };
 
 static const uint8_t ico_state_map[6]={
-		{ICON_KEMPSTON},
-		{ICON_CURSOR},
-		{ICON_SINCLAIR1},
-		{ICON_SINCLAIR2},
-		{ICON_QAOP},	
-		{ICON_CUSTOM},
+		ICON_KEMPSTON,
+		ICON_CURSOR,
+		ICON_SINCLAIR1,
+		ICON_SINCLAIR2,
+		ICON_QAOP,	
+		ICON_CUSTOM
 };
 
 static const uint8_t ico_kbd_map[6]={
-		{ICON_CURSOR},
-		{ICON_KEMPSTON},
-		{ICON_SINCLAIR1},
-		{ICON_SINCLAIR2},
-		{ICON_QAOP},	
-		{ICON_CUSTOM},
+		ICON_CURSOR,
+		ICON_KEMPSTON,
+		ICON_SINCLAIR1,
+		ICON_SINCLAIR2,
+		ICON_QAOP,	
+		ICON_CUSTOM
 };
 /*saveslot icons*/
 #define ICON_SLOT_TOP		(217)

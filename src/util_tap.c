@@ -2,9 +2,9 @@
 #include "util_sd.h"
 #include <stdint.h>
 #include <string.h>
-#include <zx_emu/z80.h>
+#include "zx_emu/z80.h"
 #include "pico/stdlib.h"
-#include <ps2.h>
+#include "ps2.h"
 #include "zx_emu/zx_machine.h"
 #include "screen_util.h"
 #include <math.h>
@@ -12,6 +12,13 @@
 
 //#define ZX_RAM_PAGE_SIZE 0x4000
 #define BUFF_PAGE_SIZE 0x1000
+
+uint8_t  tap_loader_active;
+uint16_t tap_block_position;
+
+//char tapeFileName[160];
+uint8_t TapeStatus;
+uint8_t SaveStatus;
 
 extern volatile z80 cpu;
 extern bool im_z80_stop;
@@ -21,7 +28,7 @@ extern uint8_t sd_buffer[SD_BUFFER_SIZE];
 extern char temp_msg[60];
 extern uint8_t* zx_cpu_ram[4];
 #ifndef DEBUG_DISABLE_LOADERS
-extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE];
+extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
 #endif
 
 #include "zx_emu/zx_machine.h"
@@ -349,7 +356,7 @@ void TAP_Eject(){
 		tapebufByteCount = 0;
 		tapeBlockByteCount = 0;
 		tapeTotByteCount = 0;
-		memset(temp_buffer_y,0,TEMP_BUFF_SIZE);
+		memset(temp_buffer_y,0,TEMP_BUFF_SIZE_Y);
 		tape_file_status = TAPE_FILE_FREE;
 	}
 #endif

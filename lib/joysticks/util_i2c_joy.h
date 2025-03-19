@@ -31,5 +31,6 @@ adress		A0		A1		A2
 #define PICO_I2C_JOY_SDA_PIN (14)
 #define PICO_I2C_JOY_SCL_PIN (15)
 
+extern uint8_t i2c_joy_data[16];
 
 bool i2c_joy_start();

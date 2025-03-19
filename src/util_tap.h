@@ -49,7 +49,7 @@
 //#define TAPE_BLK_PAUSELEN    87500UL // 1/4 second of pause between blo
 
 
-#define TAPE_BLK_SIZE (TEMP_BUFF_SIZE/20)-2
+#define TAPE_BLK_SIZE (TEMP_BUFF_SIZE_Y/20)-2
 #define TAPE_MAX_NAMES 78
 
 typedef struct TapeBlock{
@@ -60,12 +60,14 @@ typedef struct TapeBlock{
 	uint32_t FPos;
 } __attribute__((packed)) TapeBlock;
 
-uint8_t  tap_loader_active;
-uint16_t tap_block_position;
+
+extern uint8_t  tap_loader_active;
+extern uint16_t tap_block_position;
 
 //char tapeFileName[160];
-uint8_t TapeStatus;
-uint8_t SaveStatus;
+extern uint8_t TapeStatus;
+extern uint8_t SaveStatus;
+
 
 //size_t file_pos;
 //TapeBlock tap_blocks[TAPE_BLK_SIZE];
