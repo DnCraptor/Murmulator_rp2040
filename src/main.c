@@ -137,7 +137,8 @@ extern void i2s_out(int16_t l_out,int16_t r_out);
 
 #include "small_logo.h"
 #include "mur_logo.h"
-#include "mur_logo5.h"
+//#include "mur_logo5.h"
+#include "mur_logo6.h"
 #include "anim_stripes.h"
 #include "anim_screens.h"
 #include "anim_eyes.h"
@@ -366,6 +367,7 @@ bool FAST_FUNC(zx_flash_callback)(repeating_timer_t *rt) {
 
 //Joy joy1 = {2, 5, 4, 0, 0, 0};
 
+#define D_JOY_MENU	0x00C0
 
 #define HAT_UP		(1<<0)
 #define HAT_DOWN	(1<<1)
@@ -374,9 +376,11 @@ bool FAST_FUNC(zx_flash_callback)(repeating_timer_t *rt) {
 #define HAT_A		(1<<4)
 #define HAT_B		(1<<5)
 #define HAT_SELECT	(1<<6)
-#define HAT_PRESSED	(1<<7)
+#define HAT_START	(1<<7)
 
 volatile uint8_t hat_switch=0;
+volatile uint8_t hat_locked=0;
+
 
 /*
 const char __in_flash() *joy_text[MAX_JOY_MODE]={
@@ -398,7 +402,7 @@ const char __in_flash() *joy_text[MAX_JOY_MODE]={
 //#define D_JOY_CLK_PIN   (14)
 //#define D_JOY_LATCH_PIN (15)
 
-
+#define data_joy_2 (data_joy>>16)
 
 bool joy_pressed 	= false;
 bool joy_connected	= false;
@@ -409,9 +413,9 @@ uint8_t data_ext_joy1=0;						// добавочные кнопки первог�
 uint8_t data_ext_joy2=0;						// добавочные кнопки второго джойстика
 uint8_t active_type_joystick = NES_joy1_2;				//  тип активного подключенного джойстика
 
-uint8_t data_joy=0;
-uint8_t old_data_joy=0;
-uint8_t rel_data_joy=0;
+uint32_t data_joy=0;
+uint32_t old_data_joy=0;
+uint32_t rel_data_joy=0;
 
 // uint8_t d_joy_get_data(){
 // 	uint8_t data=0;
@@ -517,9 +521,9 @@ void process_input(){
 	data_joy1=(data_joy1&0x0f)|((data_joy1>>2)&0x30)|((data_joy1<<3)&0x80)|((data_joy1<<1)&0x40); 
 	data_joy2=(data_joy2&0x0f)|((data_joy2>>2)&0x30)|((data_joy2<<3)&0x80)|((data_joy2<<1)&0x40);
 
-	//printf("[%02X]>[%02X]\t[%02X]>[%02X]\n",data_joy1,data_ext_joy1,data_joy2,data_ext_joy2);
+	data_joy = data_joy1|(data_ext_joy1<<8)|(data_joy2<<16)|(data_ext_joy2<<24);
 
-	data_joy = data_joy1;
+	//printf("[%08X]\tJ1[%02X]>[%02X]\tJ2[%02X]>[%02X]\tCJ[%08X]\n",temp_data_joy,data_joy1,data_ext_joy1,data_joy2,data_ext_joy2,data_joy);
 
 	if(Joystics.joy_pressed) {joy_pressed = true;} else{joy_pressed = false;}
 	if(Joystics.Present_WII_joy){map_kmouse(&Wii_joy_data,zx_write_buffer);}	
@@ -602,7 +606,7 @@ void draw_mur_logo_anim(short int xPos,short int yPos,uint8_t stripe_frame,uint8
 	uint8_t pixel = 0xFF;
 	for(uint8_t y=0;y<123;y++){
 		for(uint8_t x=0;x<138;x++){
-			pixel = mur_logo5[x+(y*138)];
+			pixel = mur_logo6[x+(y*138)];
 			if(stripe_frame>0)
 			if((x>11)&&(x<72)){
 				if((y>14)&&(y<60)){
@@ -804,7 +808,7 @@ uint8_t DialogBox(char *header,char *message,uint8_t colorFG,uint8_t colorBG,uin
 			busy_wait_ms(150);
 			break;
 		}
-		if((KBD_ESC)||(data_joy==D_JOY_START)){
+		if((KBD_ESC)||(data_joy&D_JOY_START)){
 			dia_res=DLG_RES_NONE;
 			need_redraw=true;
 			busy_wait_ms(150);
@@ -933,7 +937,7 @@ uint8_t EditDialogBox(char *header,char *message,char *value,uint8_t colorFG,uin
 				break;
 			}
 		}
-		if((KBD_ESC)||(data_joy==D_JOY_START)){
+		if((KBD_ESC)||(data_joy&D_JOY_START)){
 			dia_res=DLG_RES_NONE;
 			need_redraw=true;
 			busy_wait_ms(150);
@@ -1019,6 +1023,11 @@ void draw_fast_menu(uint8_t xPos,uint8_t yPos,bool drawbg,uint8_t menu,uint8_t a
 		if((menu==0)&&(!init_fs)&&((y==0)||(y==2)||(y==3)||(y==4))){
 			draw_text_len(xPos,(yPos+FONT_H)+(y*FONT_H),fast_menu[menu][y],COLOR_DTEXT,y==active?COLOR_CURRENT_BG:COLOR_BACKGOUND,16);	
 		} else{
+			if (y==7){
+				memset(temp_msg,0,sizeof(temp_msg));
+				sprintf(temp_msg,fast_menu[menu][y],hat_locked>0?"*":" ");
+				draw_text_len(xPos,(yPos+FONT_H)+(y*FONT_H),temp_msg,COLOR_TEXT,y==active?COLOR_CURRENT_BG:COLOR_BACKGOUND,16);
+			} else 			
 			draw_text_len(xPos,(yPos+FONT_H)+(y*FONT_H),fast_menu[menu][y],COLOR_TEXT,y==active?COLOR_CURRENT_BG:COLOR_BACKGOUND,16);
 		}
 		if(menu==1){
@@ -1873,6 +1882,10 @@ void input_init(){
 	active_type_joystick = joy_start();            // инициализация джойстиков	
 	if(Joystics.joy_connected) {
 		joy_connected = true;
+		if(Joystics.Present_i2c_PCF_NES_joy1){printf("PCF_NES_joy1\t");}
+		if(Joystics.Present_i2c_PCF_NES_joy2){printf("PCF_NES_joy2\t");}
+		if(Joystics.Present_NES_joy1){printf("NES_joy1\t");}
+		if(Joystics.Present_NES_joy2){printf("NES_joy2\t");}
 		printf(" Connected \n");
 	}else{
 		joy_connected = false;
@@ -1894,6 +1907,25 @@ void input_init(){
 	}	
 }
 
+uint8_t hat_switch_process(uint16_t data_joy){
+	uint8_t result=0;
+	if(!kbd_lock){
+		if((data_joy&D_JOY_START)&&(data_joy&D_JOY_UP)){result|=HAT_UP;result|=HAT_START;}
+		if((data_joy&D_JOY_START)&&(data_joy&D_JOY_DOWN)){result|=HAT_DOWN;result|=HAT_START;}
+		if((data_joy&D_JOY_START)&&(data_joy&D_JOY_LEFT)){result|=HAT_LEFT;result|=HAT_START;}
+		if((data_joy&D_JOY_START)&&(data_joy&D_JOY_RIGHT)){result|=HAT_RIGHT;result|=HAT_START;}
+		if((data_joy&D_JOY_START)&&(data_joy&D_JOY_A)){result|=HAT_A;result|=HAT_START;}
+		if((data_joy&D_JOY_START)&&(data_joy&D_JOY_B)){result|=HAT_B;result|=HAT_START;}
+		if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_UP)){result|=HAT_UP;result|=HAT_SELECT;}
+		if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_DOWN)){result|=HAT_DOWN;result|=HAT_SELECT;}
+		if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_LEFT)){result|=HAT_LEFT;result|=HAT_SELECT;}
+		if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_RIGHT)){result|=HAT_RIGHT;result|=HAT_SELECT;}
+	}
+	if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_A)){result|=HAT_A;result|=HAT_SELECT;}
+	if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_B)){result|=HAT_B;result|=HAT_SELECT;}
+	return result;
+}
+
 FileRec* file=NULL;
 
 uint32_t timer_update =0;
@@ -1902,7 +1934,7 @@ uint32_t main_loop1 =0;
 
 uint8_t help_lng;
 
-
+/* HAPPY NEW YEAR 2025
 int16_t sin16_C( uint16_t theta ){
 	static const uint16_t base[] =
 	{ 0, 6393, 12539, 18204, 23170, 27245, 30273, 32137 };
@@ -1925,8 +1957,8 @@ int16_t sin16_C( uint16_t theta ){
 
 	return y;
 }
-
-
+*/
+/* HAPPY NEW YEAR 2025
 #define FLAKE_SIZE (20)
 typedef struct flakea{
    int x;
@@ -1982,7 +2014,7 @@ void update_flakes(){
 		  flakes[i].y = (get_rand_32()>>24);
         }
       }
-    }*/
+    }/
   }
 }
 
@@ -1992,7 +2024,7 @@ void draw_flakes(){
   }
   update_flakes();
 }
-
+*/
 
 int main(void){
 	//vreg_set_voltage(VREG_VOLTAGE_1_20);//def
@@ -2437,13 +2469,13 @@ int main(void){
 	main_loop = 0;
 	int32_t ticker = 0;
 
-
+	/* HNY 2025
 	for(uint8_t i = 0; i < FLAKE_SIZE; i++){
 		flakes[i].x = (get_rand_32()>>23);
 		flakes[i].y = (get_rand_32()>>24);
 		flakes[i].r = (get_rand_32()>>30);
   	}
-
+	*/
 
 
 	/*
@@ -2506,6 +2538,7 @@ int main(void){
 							
 						}
 					}
+					/* HNY 2025
 					if(repeat==1){
 						draw_flakes();
 						if((ticker%16384)==0){
@@ -2520,16 +2553,23 @@ int main(void){
 						draw_rect(0,0,SCREEN_W,SCREEN_H,COLOR_FULLSCREEN,true);//Заливаем экран 
 						draw_mur_logo_big(SCREEN_W/2-69,SCREEN_H/2-75,2);
 					}
+					*/
 					//busy_wait_ms(50);
 					if(my_millis()>(animation_action+(mur_logo_animation[animation_frame][0]*10))){
 						animation_action=my_millis();
-						if(repeat<1) draw_mur_logo_anim(SCREEN_W/2-69,SCREEN_H/2-75,mur_logo_animation[animation_frame][1],mur_logo_animation[animation_frame][2],mur_logo_animation[animation_frame][3]);
+						//if(repeat<1) 
+							//draw_mur_logo_anim(SCREEN_W/2-69,SCREEN_H/2-75,mur_logo_animation[animation_frame][1],mur_logo_animation[animation_frame][2],mur_logo_animation[animation_frame][3]);
+							draw_mur_logo_anim(SCREEN_W/2-69,SCREEN_H/2-75,mur_logo_animation[animation_frame][1],mur_logo_animation[animation_frame][2],0);
 						animation_frame++;
+						
 						if(animation_frame>=MAX_ANIM_FRAME){
 							animation_frame=0;
+							/* HNY 2025
 							repeat++;
 							printf("repeat:%d\n",repeat);
+							*/
 						};
+						
 					}
 					if(ticker>131070){ticker=0;}
 				}
@@ -2547,7 +2587,7 @@ int main(void){
 					busy_wait_ms(100);
 					break;
 				}
-				if((data_joy==D_JOY_START)||((((KBD_L_CTRL)||(KBD_R_CTRL)))&&(KBD_F11))){
+				if(((data_joy&D_JOY_START)||(data_joy_2&D_JOY_START))||((((KBD_L_CTRL)||(KBD_R_CTRL)))&&(KBD_F11))){
 					menu_mode[menu_ptr]=MENU_JOY_MAIN;
 					clear_input();
 					busy_wait_ms(100);
@@ -2625,13 +2665,18 @@ int main(void){
 				};			
 				if(menu_mode[menu_ptr]==EMULATION){break;}
 				process_input();
+				if((data_joy>>16)>0){
+					data_joy=(data_joy>>16);
+				}
+				
+				//printf("data_joy:[%08X]\n",data_joy);
 				/*if(((Joystics.Present_WII_joy)||(Joystics.Present_i2c_PCF_16_buttons))&&(data_joy!=0)){
 					busy_wait_ms(150); //WII joystick delay
 				}else*/
 				if(data_joy!=0){
 					busy_wait_ms(150); //joystick delay
 				}						
-
+				
 				//busy_wait_us(500);
 				/*--HARD reset--*/
 				if (((KBD_L_SHIFT)||(KBD_R_SHIFT))&&((KBD_L_ALT)||(KBD_R_ALT))&&(KBD_DELETE)){
@@ -2693,7 +2738,7 @@ int main(void){
 							clear_input();
 						}
 						/*--Return from Menu--*/
-						if((KBD_ESC)||((data_joy==D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
+						if((KBD_ESC)||((data_joy&D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
 							fast_menu_index=old_menu_index;
 							fast_mode_ptr=0;
 							menu_ptr--;
@@ -3215,7 +3260,7 @@ int main(void){
 							scroll_lfn=false;
 						}
 						/*--Return from Menu--*/
-						if((KBD_F12)||(KBD_ESC)||((data_joy==D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
+						if((KBD_F12)||(KBD_ESC)||((data_joy&D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
 							hat_switch=0x80;
 							if((fast_mode[fast_mode_ptr]==FAST_MENU_SAVE)||(fast_mode[fast_mode_ptr]==FAST_MENU_LOAD)||(fast_mode[fast_mode_ptr]==FAST_MENU_TAPE)){
 								fast_menu_index=old_menu_index;
@@ -3310,6 +3355,12 @@ int main(void){
 										is_new_screen=true;
 										continue;
 										break;
+									case FAST_MAIN_LOCKJOY: //SETTINGS
+										if(hat_locked==0){hat_locked=0xFF;} else {hat_locked=0x00;};
+										is_new_screen=true;
+										continue;
+										break;
+
 									case FAST_MAIN_SETTINGS: //SETTINGS
 										menu_ptr++;
 										old_menu_index = fast_menu_index;
@@ -3394,7 +3445,7 @@ int main(void){
 							clear_input();
 						}
 						/*--Return from Menu--*/
-						if((KBD_F12)||(KBD_ESC)||(KBD_F1)||((data_joy==D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
+						if((KBD_F12)||(KBD_ESC)||(KBD_F1)||((data_joy&D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
 							menu_ptr--;
 							need_redraw=true;
 							is_new_screen=true;
@@ -3461,7 +3512,7 @@ int main(void){
 							//convert_kb_u_to_kb_zx(&kb_st_ps2,zx_write_buffer->kb_data, true);
 						}
 						/*--Return from Menu--*/
-						if((KBD_F12)||(KBD_ESC)||((data_joy==D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
+						if((KBD_F12)||(KBD_ESC)||((data_joy&D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
 							kbd_col=0;
 							kbd_row=0;
 							kbd_cshift=false;
@@ -3575,7 +3626,7 @@ int main(void){
 							busy_wait_ms(150);
 							clear_input();
 						}
-						if((KBD_F12)||(KBD_ESC)||(data_joy==D_JOY_START)||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
+						if((KBD_F12)||(KBD_ESC)||(data_joy&D_JOY_START)||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
 							menu_mode[menu_ptr]=MENU_MAIN;
 							is_new_screen=true;
 							clear_input();
@@ -3663,7 +3714,7 @@ int main(void){
 							busy_wait_ms(150);
 							clear_input();
 						}
-						if((KBD_F12)||(KBD_ESC)||(data_joy==D_JOY_START)||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
+						if((KBD_F12)||(KBD_ESC)||(data_joy&D_JOY_START)||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
 							fast_menu_index=old_menu_index;
 							menu_ptr--;
 							old_menu_index=0;
@@ -4005,7 +4056,7 @@ int main(void){
 								software_reset();
 							}
 						}
-						/*if(((KBD_ESC)||(data_joy==D_JOY_START))){
+						/*if(((KBD_ESC)||(data_joy&D_JOY_START))){
 								paused=10;
 								is_fast_menu_mode=false;
 								is_pause_mode=false;
@@ -4072,7 +4123,7 @@ int main(void){
 							clear_input();
 						}					
 						/*--Return from Menu--*/
-						if((KBD_F12)||(KBD_ESC)||(KBD_F1)||((data_joy==D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
+						if((KBD_F12)||(KBD_ESC)||(KBD_F1)||((data_joy&D_JOY_START)&&(hat_switch==0))||(KBD_HOME)||(KBD_L_WIN)||(KBD_R_WIN)){
 							menu_ptr--;
 							need_redraw=true;
 							is_new_screen=true;
@@ -4348,6 +4399,8 @@ int main(void){
 		#endif
 
 		//printf("2 menu_ptr:%d menu_mode:%d\n",menu_ptr,menu_mode[menu_ptr]);
+		//memcpy(zx_cpu_ram[0],&RAM[0],16384);
+		//zx_cpu_ram[0]=&RAM[0];
 
 		if(menu_mode[menu_ptr]==EMULATION){
 			memset(hud_line,0x11,SCREEN_W);
@@ -4479,7 +4532,7 @@ int main(void){
 				#endif
 				/*--TR-DOS indicator--*/
 				//if(current_hud_mode&HM_TAPE_HUD){ //&&(!allow_repaint)					
-					/*--Tape load indicators--*/
+				/*--Tape load indicators--*/
 					if (tape_disp>0){
 
 						#ifndef DEBUG_DISABLE_LOADERS
@@ -4573,23 +4626,74 @@ int main(void){
 						}
 						#endif
 					}
-					/*--Tape load indicators--*/
+				/*--Tape load indicators--*/
 				//}
 				/*--Show Volume Ind--*/
 				if((current_hud_mode&HM_SHOW_BRIGHT)||(current_hud_mode&HM_SHOW_VOLUME)){
+					if(current_hud_mode&HM_SHOW_VOLUME){
+						if(cfg_volume<=MAX_CFG_VOLUME_MODE){
+							vol_strength=3;
+						}
+						if(cfg_volume<216){
+							vol_strength=2;
+						}
+						if(cfg_volume<56){
+							vol_strength=1;
+						}
+						if(cfg_volume<1){
+							vol_strength=0;
+						}						
+						vol_bank = AY_get_ampl();
+					}					
 					if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY)){
 						hud_timer=0;
 						printf("Vol/Bright timer off\n");
 						current_hud_mode=old_hud_mode;
 						current_hud_mode&=~HM_SHOW_VOLUME;
 						current_hud_mode&=~HM_SHOW_BRIGHT;
-						printf("HM3>[%04X]\n",current_hud_mode);
+						//printf("HM3>[%04X]\n",current_hud_mode);
 					}
 
 				};
+				/*--Show Volume Ind--*/
+
+				/*--KEYBOARD LOCK--*/
+				if(current_hud_mode&HM_SHOW_KEYLOCK){
+					if(kbd_lock){
+						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
+							#ifdef VGA_HDMI
+								if((g_out)current_video_out>g_out_HDMI){
+									pwm_set_gpio_level(TFT_LED_PIN,0);			//уровень подсветки TFT
+								}
+							#endif
+							//graphics_set_hud_handler(&hud_kb_lock);
+							printf("Screen OFF\n");
+							hud_timer=0;
+							continue;
+						}
+					} else {
+						#ifdef VGA_HDMI
+							if((g_out)current_video_out>g_out_HDMI){
+								pwm_set_gpio_level(TFT_LED_PIN,(TFT_MIN_BRIGHTNESS+(cfg_brightness*10)));			//уровень подсветки TFT
+							}
+						#endif
+						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
+							printf("Screen ON\n");
+							current_hud_mode&=~HM_SHOW_KEYLOCK;
+							hud_timer=0;
+							continue;
+						}
+					}
+
+				}
+				/*--KEYBOARD LOCK--*/
+
+
+
+				/*--HUD Switch--*/
 				if((current_hud_mode&HM_MAIN_HUD)||(current_hud_mode&HM_TAPE_HUD)){
 					if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*(tape_disp<2?2:4))){ 
-						hud_timer=0;
+						
 						//printf("Main/Tape timer off\n");
 						current_hud_mode=old_hud_mode;
 						if(current_hud_mode&HM_ON){
@@ -4599,7 +4703,14 @@ int main(void){
 							if(current_hud_mode&HM_SHOW_VOLUME)		{hud_ptr=&hud_prepare_scale;};
 							if(current_hud_mode&HM_SHOW_BRIGHT)		{hud_ptr=&hud_prepare_scale;};
 							if(current_hud_mode&HM_SHOW_KEYLOCK)	{hud_ptr=&hud_kb_lock;};
-							printf("HM4>[%04X]\n",current_hud_mode);
+							//printf("HM4>[%04X]\n",current_hud_mode);
+							//if((current_hud_mode&HM_SHOW_KEYLOCK)&&(kbd_lock)){
+							//	hud_timer=my_millis();
+							//}
+							/*else {
+								hud_timer=0;
+							}*/
+							printf("HM>[%04X] %d\n",(current_hud_mode&HM_SHOW_KEYLOCK),hud_timer);
 						} else if(current_hud_mode&HM_TIME){
 							//printf("HM5>[%04X]\n",current_hud_mode);
 							current_hud_mode&=~HM_MAIN_HUD;
@@ -4617,132 +4728,14 @@ int main(void){
 					if(current_hud_mode&HM_SHOW_VOLUME)		{hud_ptr=&hud_prepare_scale;};
 					if(current_hud_mode&HM_SHOW_BRIGHT)		{hud_ptr=&hud_prepare_scale;};
 					if(current_hud_mode&HM_SHOW_KEYLOCK)	{hud_ptr=&hud_kb_lock;};	
-					if(current_hud_mode&HM_SHOW_VOLUME){
-						if(cfg_volume<=MAX_CFG_VOLUME_MODE){
-							vol_strength=3;
-						}
-						if(cfg_volume<216){
-							vol_strength=2;
-						}
-						if(cfg_volume<56){
-							vol_strength=1;
-						}
-						if(cfg_volume<1){
-							vol_strength=0;
-						}						
-						vol_bank = AY_get_ampl();
-					}
+
 					graphics_set_hud_handler(hud_ptr);
 					old_hud_mode=current_hud_mode;
 					//printf("HM6>[%04X]\n",current_hud_mode);
 					//printf("tape_disp>[%04d]\n",tape_disp);
 					
 				}
-				//graphics_set_hud_handler(&hud_prepare);
-				/*if(cfg_hud_enable==HUD_TIME){
-					if((hud_display>0)&&(gaudge_display==0)){
-						graphics_set_hud_handler(&hud_prepare);
-					} else {
-						if(current_hud_mode&HM_SHOW_BATTERY){
-							graphics_set_hud_handler(&hud_battery);
-						} else {
-							graphics_set_hud_handler(NULL);	
-						}
-					}
-				}/* else 
-				if(cfg_hud_enable==HUD_ON){
-					graphics_set_hud_handler(&hud_prepare);
-				}*/
-				/*--Show Volume Ind--*/
-
-
-				/*--KEYBOARD LOCK--*/
-				if(current_hud_mode&HM_SHOW_KEYLOCK){
-					if(kbd_lock){
-						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
-							#ifdef VGA_HDMI
-								pwm_set_gpio_level(TFT_LED_PIN,0);			//уровень подсветки TFT
-							#endif
-							//graphics_set_hud_handler(&hud_kb_lock);
-							printf("Screen OFF\n");
-							hud_timer=0;
-						}
-					} else {
-						#ifdef VGA_HDMI
-							pwm_set_gpio_level(TFT_LED_PIN,(TFT_MIN_BRIGHTNESS+(cfg_brightness*10)));			//уровень подсветки TFT
-						#endif
-						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
-							printf("Screen ON\n");
-							current_hud_mode&=~HM_SHOW_KEYLOCK;
-						}
-					}
-
-				}
-				/*
-				if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
-					if(!kbd_lock){
-						show_kbl_ind=false;
-						kb_lock_display=0;
-					}
-				}
-				if((kb_lock_display>0)&&(my_millis()-kb_lock_display)<(SHOW_SCREEN_DELAY*2)){
-					if(show_kbl_ind){
-						#ifndef DEBUG_DISABLE_LOADERS
-						graphics_set_hud_handler(&hud_kb_lock);
-						#endif
-					}
-					gaudge_display=0;
-					hud_display=0;
-				}
-				if((lock_display_timer>0)&&(my_millis()-lock_display_timer)>(SHOW_SCREEN_DELAY*5)){
-					if(!lock_display_off){
-						lock_display_off=true;
-						lock_display_timer=0;
-						printf("Screen OFF\n");
-					}
-				}
-				*/
-
-
-				/*--KEYBOARD LOCK--*/				
-				/*--HUD indicator--*/
-				/*if(cfg_hud_enable==HUD_TIME){
-
-					if((!show_vol_ind)&&(!show_bri_ind)&&(!show_kbl_ind)){
-						if((hud_display>0)&&(my_millis()-hud_display)<(SHOW_SCREEN_DELAY*2)){
-							graphics_set_hud_handler(&hud_prepare);
-						}
-						if(hud_display==0){
-							if((!kbd_lock)&&(current_hud_mode&HM_SHOW_BATTERY)){
-								graphics_set_hud_handler(&hud_battery);
-							} else {
-								graphics_set_hud_handler(NULL);
-							};
-						}
-
-						/* else {
-							if((!kbd_lock)&&(current_hud_mode&HM_SHOW_BATTERY)){
-								graphics_set_hud_handler(&hud_battery);
-							} else {
-								graphics_set_hud_handler(NULL);
-							};
-							hud_display=0;
-							show_vol_ind = false;
-							show_bri_ind = false;
-							show_kbl_ind = false;
-						}/
-					}
-				}*/
-				/*--HUD indicator--*/
-
-
-				//busy_wait_us(250);//250
-				//busy_wait_ms(150);//250
-
-				/*if (ack_input){
-					process_input();
-					ack_input=false;
-				}*/
+				/*--HUD Switch--*/
 
 				//if ((ticker%4096)==0){ //4608
 				if (ack_input){
@@ -4787,24 +4780,14 @@ int main(void){
 					//hat_switch=0;
 
 					/*switch input mode*/
-					if(joy_pressed){
-						if(!kbd_lock){
-							if((data_joy&D_JOY_START)&&(data_joy&D_JOY_UP)){hat_switch|=HAT_UP;hat_switch|=HAT_PRESSED;}
-							if((data_joy&D_JOY_START)&&(data_joy&D_JOY_DOWN)){hat_switch|=HAT_DOWN;hat_switch|=HAT_PRESSED;}
-							if((data_joy&D_JOY_START)&&(data_joy&D_JOY_LEFT)){hat_switch|=HAT_LEFT;hat_switch|=HAT_PRESSED;}
-							if((data_joy&D_JOY_START)&&(data_joy&D_JOY_RIGHT)){hat_switch|=HAT_RIGHT;hat_switch|=HAT_PRESSED;}
-							if((data_joy&D_JOY_START)&&(data_joy&D_JOY_A)){hat_switch|=HAT_A;hat_switch|=HAT_PRESSED;}
-							if((data_joy&D_JOY_START)&&(data_joy&D_JOY_B)){hat_switch|=HAT_B;hat_switch|=HAT_PRESSED;}
-							if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_UP)){hat_switch|=HAT_UP;hat_switch|=HAT_SELECT;hat_switch|=HAT_PRESSED;}
-							if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_DOWN)){hat_switch|=HAT_DOWN;hat_switch|=HAT_SELECT;hat_switch|=HAT_PRESSED;}
-							if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_LEFT)){hat_switch|=HAT_LEFT;hat_switch|=HAT_SELECT;hat_switch|=HAT_PRESSED;}
-							if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_RIGHT)){hat_switch|=HAT_RIGHT;hat_switch|=HAT_SELECT;hat_switch|=HAT_PRESSED;}
-						}
-						if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_A)){hat_switch|=HAT_A;hat_switch|=HAT_SELECT;hat_switch|=HAT_PRESSED;}
-						if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_B)){hat_switch|=HAT_B;hat_switch|=HAT_SELECT;hat_switch|=HAT_PRESSED;}
+
+					if((joy_pressed)&&(hat_locked==0)){
+						hat_switch|=hat_switch_process((uint16_t)data_joy);
+						hat_switch|=hat_switch_process((uint16_t)(data_joy>>16));
 					}
 					if(!kbd_lock){
 					/*switch input mode*/
+						//printf("data_joy:[%08X]\that_locked:[%02X]\n",data_joy,hat_locked);
 						if(hat_switch==0){
 							/*MAP KBD TO KBD*/
 							if(now_kbd_mode==4){ //9 - Keyboard keys maps to QAOPM keys
@@ -4874,7 +4857,6 @@ int main(void){
 									(KBD_DELETE)){zx_write_buffer->kb_data[0]|=(1<<0);zx_write_buffer->kb_data[4]|=(1<<0);}; //Caps + 0
 								
 							}			
-
 							/*MAP KBD TO KBD*/
 							
 							/*MAP JOY TO KBD*/
@@ -4933,6 +4915,7 @@ int main(void){
 	
 							if(data_joy!=rel_data_joy){
 								memset(zx_write_buffer->kb_data,0,8);
+								//rel_data_joy=data_joy;
 							}
 							if(now_joy1_mode==4){ //4 - External NES joystick maps to QAOPM keys
 								if ((data_joy&D_JOY_UP))		{zx_write_buffer->kb_data[2]|=(1<<0);}; //Q
@@ -4941,6 +4924,8 @@ int main(void){
 								if ((data_joy&D_JOY_RIGHT))		{zx_write_buffer->kb_data[5]|=(1<<0);}; //P
 								if ((data_joy&D_JOY_B))			{zx_write_buffer->kb_data[7]|=(1<<2);}; //M
 								if ((data_joy&D_JOY_A))			{zx_write_buffer->kb_data[6]|=(1<<0);}; //Enter
+								if ((data_joy&D_JOY_START))		{zx_write_buffer->kb_data[7]|=(1<<3);}; //N
+								if ((data_joy&D_JOY_SELECT))	{zx_write_buffer->kb_data[7]|=(1<<4);}; //B
 							}
 							if(now_joy1_mode==3){ //3 - External NES joystick maps to Sinclair 2 joystick
 								if ((data_joy&D_JOY_LEFT))		{zx_write_buffer->kb_data[3]|=(1<<0);}; //1
@@ -4967,9 +4952,48 @@ int main(void){
 								if ((data_joy&D_JOY_B))			{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<0);busy_wait_us(2);}; //Caps + 0
 							}
 							if(now_joy1_mode==0){ //0 - External NES joystick maps to Kempston joystick //||(now_joy1_mode>4)
-								zx_write_buffer->kempston=data_joy;
+								zx_write_buffer->kempston|=data_joy;
 							};			
 							
+							if(now_joy2_mode==4){ //4 - External NES joystick maps to QAOPM keys
+								if (((data_joy>>16)&D_JOY_UP))			{zx_write_buffer->kb_data[2]|=(1<<0);}; //Q
+								if (((data_joy>>16)&D_JOY_DOWN))		{zx_write_buffer->kb_data[1]|=(1<<0);}; //A
+								if (((data_joy>>16)&D_JOY_LEFT))		{zx_write_buffer->kb_data[5]|=(1<<1);}; //O
+								if (((data_joy>>16)&D_JOY_RIGHT))		{zx_write_buffer->kb_data[5]|=(1<<0);}; //P
+								if (((data_joy>>16)&D_JOY_B))			{zx_write_buffer->kb_data[7]|=(1<<2);}; //M
+								if (((data_joy>>16)&D_JOY_A))			{zx_write_buffer->kb_data[6]|=(1<<0);}; //Enter
+								if (((data_joy>>16)&D_JOY_START))		{zx_write_buffer->kb_data[7]|=(1<<3);}; //N
+								if (((data_joy>>16)&D_JOY_SELECT))		{zx_write_buffer->kb_data[7]|=(1<<4);}; //B
+							}
+							if(now_joy2_mode==3){ //3 - External NES joystick maps to Sinclair 2 joystick
+								if (((data_joy>>16)&D_JOY_LEFT))		{zx_write_buffer->kb_data[3]|=(1<<0);}; //1
+								if (((data_joy>>16)&D_JOY_RIGHT))		{zx_write_buffer->kb_data[3]|=(1<<1);}; //2
+								if (((data_joy>>16)&D_JOY_DOWN))		{zx_write_buffer->kb_data[3]|=(1<<2);}; //3
+								if (((data_joy>>16)&D_JOY_UP))			{zx_write_buffer->kb_data[3]|=(1<<3);}; //4
+								if (((data_joy>>16)&D_JOY_B))			{zx_write_buffer->kb_data[3]|=(1<<4);}; //5
+								if (((data_joy>>16)&D_JOY_A))			{zx_write_buffer->kb_data[6]|=(1<<0);}; //Enter
+							}
+							if(now_joy2_mode==2){ //2 - External NES joystick maps to Sinclair 1 joystick
+								if (((data_joy>>16)&D_JOY_LEFT))		{zx_write_buffer->kb_data[4]|=(1<<4);}; //6
+								if (((data_joy>>16)&D_JOY_RIGHT))		{zx_write_buffer->kb_data[4]|=(1<<3);}; //7
+								if (((data_joy>>16)&D_JOY_DOWN))		{zx_write_buffer->kb_data[4]|=(1<<2);}; //8
+								if (((data_joy>>16)&D_JOY_UP))			{zx_write_buffer->kb_data[4]|=(1<<1);}; //9
+								if (((data_joy>>16)&D_JOY_B))			{zx_write_buffer->kb_data[4]|=(1<<0);}; //0
+								if (((data_joy>>16)&D_JOY_A))			{zx_write_buffer->kb_data[6]|=(1<<0);}; //Enter
+							}
+							if(now_joy2_mode==1){ //1 - External NES joystick maps to Cursor joystick
+								if (((data_joy>>16)&D_JOY_UP))			{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<3);busy_wait_us(2);}; //Caps + 7
+								if (((data_joy>>16)&D_JOY_DOWN))		{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<4);busy_wait_us(2);}; //Caps + 6
+								if (((data_joy>>16)&D_JOY_LEFT))		{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[3]|=(1<<4);busy_wait_us(2);}; //Caps + 5
+								if (((data_joy>>16)&D_JOY_RIGHT))		{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<2);busy_wait_us(2);}; //Caps + 8
+								if (((data_joy>>16)&D_JOY_A))			{zx_write_buffer->kb_data[6]|=(1<<0);busy_wait_us(2);}; //Enter
+								if (((data_joy>>16)&D_JOY_B))			{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<0);busy_wait_us(2);}; //Caps + 0
+							}
+							if(now_joy2_mode==0){ //0 - External NES joystick maps to Kempston joystick //||(now_joy1_mode>4)
+								zx_write_buffer->kempston|=(data_joy>>16);
+							};			
+														
+
 							/*if(now_joy1_mode<5){
 								//Map PS/2 cursor keys to Spectrum cursor keys
 								if((data_joy==0)&&(kb_st_ps2.state==0x08)){
@@ -4995,9 +5019,21 @@ int main(void){
 						//printf("u[0]:[%08lX]\tu[1]:[%08lX]\tu[2]:[%08lX]\tu[3]:[%08lX]\n",kb_st_ps2.u[0],kb_st_ps2.u[1],kb_st_ps2.u[2],kb_st_ps2.u[3]);
 						
 						convert_kb_u_to_kb_zx(&kb_st_ps2,zx_write_buffer->kb_data);
+
 						
-	
-						if((!joy_pressed)&&(rel_data_joy&D_JOY_START)&&(hat_switch==0)){
+						//if(((rel_data_joy&D_JOY_MENU)==D_JOY_MENU)||(((rel_data_joy>>16)&D_JOY_MENU)==D_JOY_MENU)){
+						
+						//}
+						if(hat_locked>0){
+							if(((data_joy&D_JOY_MENU)==D_JOY_MENU)||(((data_joy>>16)&D_JOY_MENU)==D_JOY_MENU)){
+								hat_locked=0;
+								menu_ptr++;
+								menu_mode[menu_ptr]=MENU_JOY_MAIN;
+								rel_data_joy=data_joy;
+								break;
+							}
+						}
+						if((!joy_pressed)&&((rel_data_joy&D_JOY_START)||((rel_data_joy>>16)&D_JOY_START))&&(hat_switch==0)&&(hat_locked==0)){
 							menu_ptr++;
 							menu_mode[menu_ptr]=MENU_JOY_MAIN;
 							rel_data_joy=data_joy;
@@ -5025,11 +5061,13 @@ int main(void){
 				if(hat_switch>0){
 					if(current_hud_mode&HUD_TIME){hud_timer = my_millis();};
 					//printf(">hat_switch:[%02X]\n",hat_switch);
-					if(!(hat_switch&HAT_SELECT)){
+					if((hat_switch&HAT_START)){
 						if(hat_switch&HAT_UP){
 							hat_switch&=~HAT_UP;
-							now_joy1_mode++;
+							if((data_joy<<16)>0)now_joy1_mode++;
+							if((data_joy>>16)>0)now_joy2_mode++;
 							if(now_joy1_mode>4) now_joy1_mode=0;
+							if(now_joy2_mode>4) now_joy2_mode=0;
 							data_joy=0;
 							old_data_joy=0;
 							rel_data_joy=0;
@@ -5043,8 +5081,10 @@ int main(void){
 						}
 						if(hat_switch&HAT_DOWN){
 							hat_switch&=~HAT_DOWN;
-							now_joy1_mode--;
+							if((data_joy<<16)>0)now_joy1_mode--;
+							if((data_joy>>16)>0)now_joy2_mode--;
 							if(now_joy1_mode>=5) now_joy1_mode=4;
+							if(now_joy2_mode>=5) now_joy2_mode=4;
 							data_joy=0;
 							old_data_joy=0;
 							rel_data_joy=0;
@@ -5164,8 +5204,8 @@ int main(void){
 								hud_timer = my_millis();
 								current_hud_mode|=HM_SHOW_BRIGHT;
 								current_hud_mode&=~HM_SHOW_VOLUME;
-								busy_wait_ms(100);
 								printf("Bri UP\n");
+								busy_wait_ms(150);
 							}
 							if(hat_switch&HAT_LEFT){
 								hat_switch&=~HAT_LEFT;
@@ -5177,25 +5217,27 @@ int main(void){
 								hud_timer = my_millis();
 								current_hud_mode|=HM_SHOW_BRIGHT;
 								current_hud_mode&=~HM_SHOW_VOLUME;
-								busy_wait_ms(100);
 								printf("Bri DOWN\n");
+								busy_wait_ms(150);
 							}
 							if(hat_switch&HAT_A){
-								hat_switch&=~HAT_A;
+								//hat_switch&=~HAT_A;
+								hat_switch=0;
 								kbd_lock=true;
 								hud_timer = my_millis();
 								current_hud_mode|=HM_SHOW_KEYLOCK;
 								printf("KB LOCK\n");
-								//busy_wait_ms(150);
+								busy_wait_ms(50);
 								continue;
 							}
 							if(hat_switch&HAT_B){
-								hat_switch&=~HAT_B;
+								//hat_switch&=~HAT_B;
+								hat_switch=0;
 								kbd_lock=false;
 								hud_timer = my_millis();
 								current_hud_mode|=HM_SHOW_KEYLOCK;
 								printf("KB UNLOCK\n");
-								//busy_wait_ms(150);
+								busy_wait_ms(50);
 								continue;
 							}
 						}
@@ -5394,6 +5436,7 @@ int main(void){
 						}
 						if ((KBD_NUM_SLASH)||(((KBD_L_ALT)||(KBD_R_ALT))&&(KBD_DELETE))){
 							AY_next_ampls();
+							vol_bank = AY_get_ampl();
 							busy_wait_ms(100);
 							current_hud_mode|=HM_SHOW_VOLUME;
 							current_hud_mode&=~HM_SHOW_BRIGHT;
@@ -5669,6 +5712,7 @@ int main(void){
 			}while(menu_mode[menu_ptr]==EMULATION); //while(1) emulation loop
 			//END EMULATION LOOP
 			//clear_input();
+			
 			disk_action=0;
 			tape_action=0;
 			zx_machine_enable_vbuf(false);

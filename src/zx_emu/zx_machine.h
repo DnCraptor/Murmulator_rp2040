@@ -1,5 +1,6 @@
 #pragma once
 #include "inttypes.h"
+#include "../globals.h"
 
 
 //количество бит на пиксел 4 или 8
@@ -20,6 +21,10 @@ typedef struct ZX_Input_t{
     uint8_t kempston_mouse_whl;
 } ZX_Input_t;
 
+extern uint8_t* zx_cpu_ram[4];//Адреса 4х областей памяти CPU при использовании страниц
+extern uint8_t* zx_ram_bank[8];//Хранит адреса 8ми банков памяти
+extern uint8_t* zx_rom_bank[4];//Адреса 4х областей ПЗУ (48к 128к TRDOS и резерв для какого либо режима(типа тест))
+extern uint8_t RAM[ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES];
 
 extern bool stateFlash;
 ////цвета спектрума в формате 6 бит

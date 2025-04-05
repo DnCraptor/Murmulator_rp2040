@@ -1,10 +1,11 @@
 #pragma once
 #include "stdio.h"
 #include "screen_util.h"
+#include "config.h"
 
 #define TRDOS_COMPILE
 
-#define FW_VERSION "v0.96.18"
+#define FW_VERSION "v"SOFT_VERSION
 #define FW_AUTHOR "TecnoCat"
 
 #define SCREEN_H (240)
@@ -12,6 +13,7 @@
 #define V_BUF_SZ (SCREEN_H*SCREEN_W/2)
 
 #define ZX_RAM_PAGE_SIZE 0x4000
+#define ZX_RAM_PAGES 8
 #define DIRS_DEPTH (10)
 #define MAX_FILES  (400)
 #define SD_BUFFER_SIZE 0x4000  //Размер буфера для работы с файлами
@@ -46,7 +48,7 @@ extern bool kbd_lock;
 
 
 
-#define TEMP_BUFF_SIZE_X 0x0800
+#define TEMP_BUFF_SIZE_X 0x0400
 #define TEMP_BUFF_SIZE_Y 0x0A00
 
 //#define NUM_V_BUF (3)
@@ -61,8 +63,10 @@ extern uint8_t graph_buf[];
 extern uint8_t hud_line[];
 extern uint8_t color_zx[16];
 
-//extern uint8_t temp_buffer_x[TEMP_BUFF_SIZE_X];
+extern uint8_t temp_buffer_x[TEMP_BUFF_SIZE_X];
 extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
+
+extern uint8_t sd_buffer[SD_BUFFER_SIZE];
 
 int	null_printf(const char *str, ...);
 

@@ -20,7 +20,7 @@ char files[MAX_FILES+5][FILE_NAME_LEN];
 char dir_path[(DIRS_DEPTH+5)*FILE_NAME_LEN];
 char activefilename[400];
 char afilename[FILE_NAME_LEN+1];
-uint8_t sd_buffer[SD_BUFFER_SIZE]; //буфер для работы с файлами
+extern uint8_t sd_buffer[SD_BUFFER_SIZE]; //буфер для работы с файлами
 char filename[260];
 
 //extern uint8_t zx_color[];

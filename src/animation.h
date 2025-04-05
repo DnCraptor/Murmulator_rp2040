@@ -20,7 +20,7 @@
 #define CL_WHITE		0x0f
 */
 
-#define MAX_ANIM_FRAME 100
+#define MAX_ANIM_FRAME 96
 /*
 	0  sleep x10 ms
 	1  stripe_frame
@@ -36,17 +36,23 @@
 
 uint8_t __in_flash() mur_logo_animation[MAX_ANIM_FRAME][4]={ //3*3
 // sleep 10Sec
+/*
 {	250,	0,	0,	0,	},
 {	250,	0,	0,	0,	},
 {	250,	0,	0,	0,	},
 {	250,	0,	0,	0,	},
-// sleep 20Sec
+*/
+// sleep 10Sec
+
 {	250,	0,	0,	1,	},
 {	250,	0,	0,	1,	},
 {	250,	0,	0,	2,	},
 {	250,	0,	0,	1,	},
+
+// sleep 10Sec
 {	250,	0,	0,	3,	},
 {	250,	0,	0,	1,	},
+{	250,	1,	0,	1,	},
 {	250,	1,	0,	1,	},
 
 {	10,		1,	1,	3,	},
@@ -151,9 +157,9 @@ uint8_t __in_flash() mur_logo_animation[MAX_ANIM_FRAME][4]={ //3*3
 //Show screen
 {	5,		1,	16,	3,	},
 {	100,	1,	16,	3,	},
-//Sleep 20 sec
+//Sleep 15 sec
 {	250,	1,	16,	3,	},
 {	250,	1,	16,	3,	},
 {	250,	1,	16,	1,	},
-{	250,	1,	16,	1,	},
+//{	250,	1,	16,	1,	},
 };

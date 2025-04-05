@@ -334,7 +334,7 @@ bool FAST_FUNC(hud_prepare_scale)(short int line){
 			if(line<img_last_line){
 				addr=(((line-ICON_BAT_TOP)+img_up)*ICONS_WIDTH);
 				memcpy(&hud_line[ICON_BAT_LEFT],&icons[addr+img_left],(img_right-img_left));
-				return true;
+				//return true;
 			}
 		}
 	}
