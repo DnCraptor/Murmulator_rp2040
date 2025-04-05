@@ -1,86 +1,216 @@
-Welcome!!!
-This project is designed for a "minimalistic" emulation of the ZX-Spectrum computer based on the Raspberry Pi Pico controller.
-
-	Project Group: https://t.me/ZX_MURMULATOR
-
-		---==[Authors]==---
-	Author of core and hardware: Alex Ekb(@Alex_Eburg)
-	TR-DOS Support: First Last(@First_0x26_Last)
-	File Manager: Alex Ekb(@Alex_Eburg), Cat's Tail(@tecnocat)
-	SoftTurboSound Extension: Alex Ekb(@Alex_Eburg), Cat's Tail(@tecnocat), Sa Gin(@sa gin)
-	TurboSound Extension: Alex Ekb(@Alex_Eburg), Sa Gin(@sa gin), Cat's Tail(@tecnocat)
-	Soundrive Extension: Sa Gin(@sa gin), Cat's Tail(@tecnocat)
-
-
-***************************************************************************************************************
-
-		---==[Keyboard Shortcuts]==---
-[F1]			- Help
-[F2]			- Save Menu
-[F3]			- Boot Menu
-[Win]/[Home]	- File Manager
-[Ctrl+Alt+Del]	- Reset the emulator
-[Ctrl+Alt+Ins]	- NMI emulator
-[Shift+Alt+Del]	- Reset the controller
-[Ctrl+F1-F10]	- Save the image .z80 to the "SAVE" folder of the SD card
-[Shift+F1-F10]	- Loading the image .z80 from the "SAVE" folder of the SD card
-[Menu]/[F12]	- Displays free save slots by Ctrl+F1-F10
-[BackSpace]		- Output one directory above the current level in the file manager
-[F11]			- Switching the active joystick
-[Ctrl+F11]		- Access the quick menu
-[Pause]			- Pause emulation
-
-		--=[Working with the "ribbon" .tap]=--
-[F5]			- Start the tape
-[F6]			- Stop the tape, repeat in stop mode: rewind to the beginning
-[F7]			- Next block
-[F8]			- Previous block
-
-		--=[Joystick]=--
-[START]			- Quick menu call / Exiting the file manager
-[A]				- File Selection
-[C]				- Exit to the level up
-
-		--=[In-game joystick]=--
-[START]			- Quick menu call / Exiting the file manager
-[A]				- The action assigned in the game
-[B]				- The action assigned in the game
-[C]				- The action assigned in the game
-
-		--=[Navigation in the file manager]=--
-[Cursor keys:]
-[Left arrow]	- Start of the list
-[Right arrow]	- End of the list
-[Up Arrow]		- Previous file
-[Down arrow]	- Next file
-[PageUp]		- Page up
-[PageDn]		- Page down
-[Enter]			- Launching the image
-[F12]			- Emulator settings
-/[Tap load]		- Boot settings .tap
-/[Def joy mode]	- Joystick mode
-		[Ext Joystick]			- An external joystick is connected to the Kemston port
-		[Kempston Joystick]		- Emulation from the cursor keys of the keyboard
-		[Interface2 Joystick]	- Keyboard cursor keys as Interface2
-		[Cursor Joystick]		- Cursor keys of the keyboard as Cursor
-		[---===[NONE]===---]	- Everything is off
-	/[Reboot ZX before load]	- Reset the emulation before loading
-	/[Snd mode]					- Switching the audio output
-	/[LOAD]						- Load settings from SD
-	/[DEFAULT]					- Default settings
-	/[SAVE]						- Save settings to SD
-	
-		--=[ Debugger NMI commands ]=--
-	1 — switches the number system 16/10;
-	2 — Switches the digital/character representation;
-	3 — requests a number and enters it into the current register;
-	4 — request a number and enter it into the current memory grid;
-	CS+5 — 64 addresses back;
-	CS+6 — 1 address back;
-	CS+7 — 1 address ahead;
-	CS+8 — 64 addresses ahead;
-	CS+9 — go to the previous register;
-	CS+0 — move to the next register;
-	SS+7 — requesting a number and calling a subroutine at the entered address;
-	SS+0 — if the command line is empty, then exit the monitor in Basic;
-	SPACE — sets the cell according to the entered number
+                         Welcome!!!                        
+    This project is designed for minimalistic emulation    
+        computer ZX-Spectrum based on the controller       
+                   [Raspberry Pi Pico]                     
+                                                           
+ Project Group: https://t.me/ZX_MURMULATOR                 
+                                                           
+-----------------------==[Authors]==-----------------------
+ The author of the core and hardware:Alex Ekb (@Alex_Eburg)
+ TR-DOS support:               First Last(@First_0x26_Last)
+                                      Cat's Tail(@tecnocat)
+ File Manager:                        Alex Ekb(@Alex_Eburg)
+                                      Cat's Tail(@tecnocat)
+ SoftTurboSound Extension:            Alex Ekb(@Alex_Eburg)
+                                      Cat's Tail(@tecnocat)
+                                            Sa Gin(@sa gin)
+ TurboSound Extension:                Alex Ekb(@Alex_Eburg)
+                                            Sa Gin(@sa gin)
+                                      Cat's Tail(@tecnocat)
+ Soundrive Extension:                       Sa Gin(@sa gin)
+                                      Cat's Tail(@tecnocat)
+ TFT driver:                          Alex Ekb(@Alex_Eburg)
+                                      Cat's Tail(@tecnocat)
+                                                           
+***********************************************************
+                                                           
+-------------==[Emulator Keyboard Shortcuts]==-------------
+[F1] - Help                                                
+[F2] - Quick Save Menu                                     
+[F3] - Quick Load Menu                                     
+[Win]/[Home] - File Manager                                
+                                                           
+[Ctrl+F1-F10] - Save the .z80 image to "SAVE" folder     
+[Shift+F1-F10] - .z80 Image load from "SAVE" folder      
+[Menu]/[Alt+F12]- Show free save slots at "SAVE" folder  
+[F11] - Enable disable HUD                                 
+[F12]/[PrnScreen] - Quick menu call                        
+[Pause] - Pauses emulation                                 
+                                                           
+[Ctrl+Alt+Del] - Reset the emulator                        
+[Ctrl+Alt+Ins] - NMI emulator                              
+[Shift+Alt+Del] - Reset the controller                     
+[Ctrl+Alt+BSpace]- Set default settings and                
+                                          reboot controller
+[NumPad +]/[Alt+PgUp] - Volume Up of the emulation         
+[NumPad -]/[Alt+PgDn] - Volume Down of the emulation       
+[NumPad *]/[Alt+End] - Enable/disable Mute mode            
+[NumPad /]/[Alt+Del] -Switch the envelope in SoftTurboSound
+                                                           
+---------------=[Working with "Tape" .tap]=--------------
+[F5] - Start playing tape                                  
+[F6] - Stop the tape, repeat: rewind to the beginning      
+                                                           
+[F7] - Next block                                          
+[F8] - Previous block                                      
+[F9] - Eject current tape                                  
+                                                           
+*************************[Joystick]************************
+[START]     - Quick menu call                              
+        / Exiting the file manager                         
+[A] - File Selection                                       
+[C] - Exit to top folder                                   
+                                                           
+---------------------=[Joystick Menu]=---------------------
+[FILE BROWSER] - Calling the file manager                  
+  [KEYBOARD] - Calling the on-screen keyboard              
+  [SAVE] - List of slots to save games                     
+  [LOAD] - List of slots for load games                    
+  [TAPE] - Open the virtual tape management menu           
+  [POKE] - Cheat code entry menu                           
+  [HELP] - Help                                            
+8bit Kempston[ ]- Enables translation of all joystick button 
+				  to the emulation. Exit the mode by START+SELECT
+  [SETTINGS] - Emulation settings menu                     
+  Soft reset - Restarting the emulation                    
+  Hard reset - Restarting the system                       
+                                                           
+-------------------=[Joystick hat switch]=-----------------
+[START]+[UP]    - Next joystick mapping                    
+[START]+[DOWN]  - Prev joystick mapping                    
+[START]+[LEFT]  - Quick save                               
+[START]+[RIGHT] - Quick load                               
+[START]+[A]     - On screen keyboard                       
+[START]+[B]     - File manager                             
+                                                           
+[SELECT]+[UP]   - Volume Up                                
+[SELECT]+[DOWN] - Volume Down                              
+[SELECT]+[LEFT] - [TFT mode] Brightness Level Down         
+[SELECT]+[RIGHT]- [TFT mode] Brightness Level Up           
+[SELECT]+[A]    - [TFT mode] Keyboard Lock                 
+[SELECT]+[B]    - [TFT mode] Keyboard Unlock               
+                                                           
+---------------------=[In-game joystick]=------------------
+[START]       - Quick menu call                            
+         / Exiting the file manager                        
+[A] - The action assigned in the game                      
+[B] - The action assigned in the game                      
+[C] - The action assigned in the game                      
+                                                           
+----------------=[File Manager Navigation]=----------------
+[Cursor keys:]                                             
+[Left arrow]  - Start of the list                          
+[Right arrow] - End of the list                            
+[Up Arrow]    - Previous file                              
+[Down arrow]  - Next file                                  
+[PageUp]      - Page up                                    
+[PageDn]      - Page down                                  
+[Enter]       - Launching the image                        
+[BackSpace]   - Exit one directory above the current level 
+[PrnScreen]   - Switching the splash screen/content view   
+                                                           
+[Ins]/[Space] - Marking files for deletion                 
+[Shift+Delete]- Opens the file deletion dialog             
+                                                           
+-------------------=[Emulator Settings]=-------------------
+[F12] - Emulator settings (Available from the file manager)
+                                                           
+ [Boot go to] - Select the type of start splash screen     
+  [LOGO]     - Show splash screen after the start          
+  [FILE MANAGER] - Show the File Manager after startup     
+  [EMULATION] - Start emulation after startup              
+                                                           
+ [Head Up Display]- Enabling icons on top of the screen    
+  [On]            - Enable the display of occupied drives, 
+                    loading process and save slots         
+  [Off]           - Clean emulation screen                 
+  [Time]          - HUD disappear by time                  
+                                                           
+ [Tap load]  - .tap files loading settings                 
+  [NORMAL LOADING] - Manual loading of images .tap         
+                     (see "Working with "tape" section)
+  [AUTOSTOP LOADING] - Automatic loading via ROM           
+  [FAST LOADING] - Fast loading via ROM                    
+                                                           
+ [Ext tape load pin] - Setting the pin number              
+                 for external loading from a tape recorder 
+  [GPIO22] - Loading programs via GPIO22                   
+  [GPIO29] - Loading programs via GPIO29                   
+                                                           
+ [Def joy mode] - Default joystick mode                    
+  [Ext>Kempston] - External joystick mapped to [Kempston]  
+  [Kbd>Kempston] - Emulation of [Kempston] from keyboard   
+                   (Cursors + RAlt)                        
+  [Kbd>Intface2] - Cursor keys as Interface2               
+  [ Kbd>Cursor ] - Cursor keys as CursorJoystick           
+  [-=+[NONE]+=-] - Everything is off                       
+                                                           
+ [Reboot ZX before load] - Reset emulation before loading  
+  [Yes] - Restart emulation when loading images            
+  [No] - Do not restart emulation when loading images      
+                                                           
+ [Snd mode] - Switching the audio output                   
+  [-=[Sound OFF]=-] - Turn off all sound                   
+  [ Only Beeper ] - Audio only from the beeper             
+  [ Beeper+SoftAY ] - Beeper and emulation AY-3-8910       
+  [ Beeper+SoftTS ] - Beeper and TurboSound emulation      
+  [ HW TurboSound ] - External hardware TurboSound         
+                                                           
+ [Soft Sound Vol] - Sound Volume of the emulation          
+                    (works only in Software emulation mode)
+                                                           
+ [Video output] - Video output type                        
+  [ AUTO ] - Auto Detection (VGA/HDMI)                     
+  [ VGA ] - Output to the VGA connector                    
+  [ HDMI ] - Output to the HDMI connector                  
+  [ ST7789 ]  - Output to LCD screen with the ST7789 chip  
+  [ ST7789V ] - Output to LCD screen with the ST7789V chip 
+  [ ILI9341 ] - Output to LCD screen with the ILI9341 chip 
+  [ ILI9341V ]- Output to LCD screen with the ILI9341V chip
+  [ GC9A01 ]  - Output to LCD screen with GC9A01 chip      
+           A reboot is required to apply mode.             
+                                                           
+ [Video framerate] - Switching the vertical refresh rate   
+  [60Hz] - Suitable for most LCD monitors                  
+  [72Hz] - Suitable for most LCD/HDMI monitors             
+  [75Hz] - Suitable for LCD/HDMI/CRT monitors              
+  [85Hz] - Suitable for CRT monitors                       
+           A reboot is required to apply mode.             
+                                                           
+ [LCD BrightLev] - The brightness level for LCD backlight  
+                   (works only with modes: ST7789,ST7789V, 
+                                   ILI9341,ILI9341V,GC9A01)
+                                                           
+ [LCD Rotate] - Rotate the image of the LCD screen         
+  [Horizont R] - Horizontal, display connector on the right
+  [Vertical R] - Vertical, display connector from below    
+  [Horizont L] - Horizontal, display connector on the left 
+  [Vertical L] - Vertical, display connector from above    
+                    (works only with modes: ST7789,ST7789V,
+                                   ILI9341,ILI9341V,GC9A01)
+           A reboot is required to apply mode.             
+                                                           
+ [LCD inversion] - Inversion of the LCD screen image       
+ [ NORMAL ] - Normal image                                 
+ [INVERTED] - Inversion of image colors                    
+                    (works only with modes: ST7789,ST7789V,
+                                   ILI9341,ILI9341V,GC9A01)
+           A reboot is required to apply mode.             
+                                                           
+ [LCD Pixel format] - LCD screen pixel format              
+ [ BGR ] - Blue Green Red, reverse order                   
+ [ RGB ] - Red Green Blue, forward order                   
+                    (works only with modes: ST7789,ST7789V,
+                                   ILI9341,ILI9341V,GC9A01)
+           A reboot is required to apply mode.             
+                                                           
+ [HW TS Main Chip] - TurboSound main chip selection        
+ [Chip 1] - the first TurboSound chip addresses port 0xFF  
+ [Chip 2] - the first TurboSound chip addresses port 0xFE  
+                                                           
+ [LOAD]     - Reload settings from SD                      
+ [DEFAULT]  - Load default settings                        
+                           and overwrite the settings file 
+ [SAVE]     - Save settings to SD card                     
+ [UPDATE FIRMWARE] - Reboot to firmware update mode        
+ [!!!REBOOT!!!] - Restart the controller                   
