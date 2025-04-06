@@ -34,6 +34,7 @@ set (VERSION_MAJOR 0)
 set (VERSION_MINOR 96)
 set (VERSION_PATCH 19)
 set (SOFT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+set (SOFT_VERSION_FN ${VERSION_MAJOR}_${VERSION_MINOR}_${VERSION_PATCH})
 
 configure_file ("src/config.h.in" "../src/config.h" @ONLY)
 
@@ -49,7 +50,7 @@ option(HDMI "Enable HDMI display" OFF)
 option(TV "Enable TV composite output" OFF)
 option(SOFTTV "Enable TV soft composite output" OFF)
 
-SET(PROJECT_NAME "murm_vga-hdmi-tft_${SOFT_VERSION}")
+SET(PROJECT_NAME "murm_vga-hdmi-tft_${SOFT_VERSION_FN}_m1_p1_2")
 SET(BUILD_NAME "${PROJECT_NAME}_${SOFT_VERSION}")
 
 set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}") #/bin/

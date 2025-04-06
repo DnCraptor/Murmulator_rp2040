@@ -4715,7 +4715,7 @@ int main(void){
 							/*else {
 								hud_timer=0;
 							}*/
-							printf("HM>[%04X] %d\n",(current_hud_mode&HM_SHOW_KEYLOCK),hud_timer);
+							//printf("HM>[%04X] %d\n",(current_hud_mode&HM_SHOW_KEYLOCK),hud_timer);
 						} else if(current_hud_mode&HM_TIME){
 							//printf("HM5>[%04X]\n",current_hud_mode);
 							current_hud_mode&=~HM_MAIN_HUD;
