@@ -4,7 +4,7 @@
 
 // #define PICO_FLASH_SIZE_BYTES (4 * 1024 * 1024)
 
-//#define DEBUG_DELAY
+#define DEBUG_DELAY
 
 //#define DEBUG_BLINK
 
@@ -154,6 +154,8 @@ extern void i2s_out(int16_t l_out,int16_t r_out);
 #include "util_cfg_menu.h"
 #include "util_power.h"
 
+//bool hw_zx_get_bit_LOAD();
+//void hw_zx_set_beep_out(uint8_t val);
 
 extern uint8_t cfg_boot_scr;
 extern uint8_t cfg_hud_enable;
@@ -1380,8 +1382,8 @@ extern uint8_t outs[6];
 static uint8_t beep_data;
 static uint8_t beep_data_old;
 static bool bepper_out = false;
-uint8_t tape_data;
-uint8_t tape_data_old;
+volatile uint8_t tape_data;
+volatile uint8_t tape_data_old;
 static bool ldout = false;
 
 static int outL=0;
@@ -1408,7 +1410,8 @@ bool FAST_FUNC(hw_zx_get_bit_LOAD)(){
 		} else {
 			tape_data = 0;
 		}
-	} else {
+	} 
+	if(tap_loader_active&TAPE_EXTERNAL){
 		tape_data = gpio_get(tape_load_pin);
 	};
 	ldout^=(tape_data==tape_data_old)?0:1;
@@ -4462,10 +4465,12 @@ int main(void){
 			}
 			#endif
 			do{
+				//printf("tap_loader_active>[%04X]\n",tap_loader_active);
 				ticker++;
 				if ((ticker%4096)==0){
 					gpio_put(WORK_LED_PIN,0);
 					//6printf("%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n",mixL,mixR,outL,outR,beeper_signed,tape_signed,beep_data,beep_data_old);
+					//printf("HM1>[%04X] %d\n",current_hud_mode,hud_timer);
 				}
 				if ((ticker%800000)==0){
 					if(current_hud_mode&HM_SHOW_BATTERY){
@@ -4488,7 +4493,7 @@ int main(void){
 						*/
 					}
 				}
-
+			
 				/*--TR-DOS indicator--*/
 				#ifdef TRDOS_COMPILE
 				if((disk_action>0)&&(time_us_32()-disk_action)>(SHOW_SCREEN_DELAY*75)){
@@ -5463,6 +5468,7 @@ int main(void){
 						if(chm>HM_TIME)chm=HM_OFF;
 						if(chm==HM_OFF){
 							MessageBox("HUD is ON","\0",CL_GREEN,CL_WHITE,2);
+							hud_timer=0;
 							current_hud_mode=HM_ON;
 							current_hud_mode|=HM_MAIN_HUD;
 							continue;

@@ -133,7 +133,6 @@ static void FAST_FUNC(write_z80)(void* userdata, uint16_t addr, uint8_t val){
 unsigned long prev_ticks, cur_ticks;
 
 static uint8_t FAST_FUNC(in_z80)(z80* const z, uint8_t port) {
-	
 	uint8_t portH=z->_hi_addr_port;
 	uint8_t portL=port;
 	uint16_t port16=(portH<<8)|portL;
@@ -191,8 +190,8 @@ static uint8_t FAST_FUNC(in_z80)(z80* const z, uint8_t port) {
 		} 
 		if (port16==0x021F){
 			//printf("Read joy 0x021F: %02X\n",zx_read_buffer->kempston);
-			//return zx_read_buffer->kempston & 0b00011111;
-			return zx_read_buffer->kempston & 0b11111111;
+			return zx_read_buffer->kempston & 0b00011111;
+			//return zx_read_buffer->kempston & 0b11111111;
 		} else
 		if ((port16&0x001F)==0x001F){
 			//printf("Read joy 0x001F: %02X\n",zx_read_buffer->kempston);
@@ -200,8 +199,6 @@ static uint8_t FAST_FUNC(in_z80)(z80* const z, uint8_t port) {
 			return zx_read_buffer->kempston & 0b11111111;
 		}
 	} else {
-		//загрузка с магнитофона и опрос клавиатуры
-		ack_input=true;
 		//if (port16!=0x7FFE) printf(": %X ", port16);
 		/*
 			if ((port)==0xFE)
@@ -211,16 +208,14 @@ static uint8_t FAST_FUNC(in_z80)(z80* const z, uint8_t port) {
 			prev_ticks=cur_ticks;
 			}
 		*/
-		if (hw_zx_get_bit_LOAD()){
-			uint8_t out_data=zx_keyboardDecode(portH);
-			out_data&=0b10111111;
-			return(out_data|=1<<6);
-		}
-
+		//загрузка с магнитофона и опрос клавиатуры
+		ack_input=true;
 		uint8_t out_data=zx_keyboardDecode(portH);
-		return(out_data&0b10111111);
-
-
+		out_data&=0b10111111;
+		if(hw_zx_get_bit_LOAD()){
+			out_data|=1<<6;
+		}
+		return(out_data);
 	}
 	return 0xFF;
 }

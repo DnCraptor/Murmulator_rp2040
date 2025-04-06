@@ -38,14 +38,14 @@ extern ZX_Input_t* zx_write_buffer;
 
 
 //функции, которые надо определить аппаратно
-bool hw_zx_get_bit_LOAD();
+extern bool hw_zx_get_bit_LOAD();
 void hw_zx_set_beep_out(uint8_t val);
 
 //void hw_zx_set_snd_out(bool val);
 //void hw_zx_set_save_out(bool val);
 
 //работа со звуком - функции реального времени
-void Soundrive(uint8_t port,uint8_t val);
+extern void Soundrive(uint8_t port,uint8_t val);
 
 //буфер для отрисовки
 uint8_t* zx_machine_screen_get(uint8_t* current_screen);
