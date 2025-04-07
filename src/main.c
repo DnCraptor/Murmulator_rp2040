@@ -2250,9 +2250,9 @@ int main(void){
 	printf("AY Reset\n");
 	busy_wait_ms(50);
 	AY_reset(cfg_sound_mode);
+	//printf("Sound out:%s\n",sound_out_config[cfg_sound_out_mode]);
 
 	printf("Init flash timer\n");
-	
 	repeating_timer_t zx_flash_timer;
 	short int hz=2;
 	if (!add_repeating_timer_us(-1000000 / hz, zx_flash_callback, NULL, &zx_flash_timer)) {
@@ -4957,7 +4957,7 @@ int main(void){
 								if ((data_joy&D_JOY_B))			{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<0);busy_wait_us(2);}; //Caps + 0
 							}
 							if(now_joy1_mode==0){ //0 - External NES joystick maps to Kempston joystick //||(now_joy1_mode>4)
-								zx_write_buffer->kempston|=data_joy;
+								zx_write_buffer->kempston|=(uint8_t)data_joy;
 							};			
 							
 							if(now_joy2_mode==4){ //4 - External NES joystick maps to QAOPM keys
@@ -4995,7 +4995,7 @@ int main(void){
 								if (((data_joy>>16)&D_JOY_B))			{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<0);busy_wait_us(2);}; //Caps + 0
 							}
 							if(now_joy2_mode==0){ //0 - External NES joystick maps to Kempston joystick //||(now_joy1_mode>4)
-								zx_write_buffer->kempston|=(data_joy>>16);
+								zx_write_buffer->kempston|=(uint8_t)(data_joy>>16);
 							};			
 														
 
