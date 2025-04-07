@@ -1,8 +1,12 @@
 #include "i2s.h"
 
+//#include <stdio.h>
+#include <pico/stdlib.h>
+
 #include "hardware/pio.h"
 #include <hardware/clocks.h>
 #include "hardware/dma.h"
+
 
 // --------- //
 // audio_i2s //
@@ -40,14 +44,18 @@ static inline pio_sm_config audio_i2s_program_get_default_config(uint offset) {
 };
 
 static uint sm_i2s=-1;
+
 static inline void audio_i2s_program_init(PIO pio,  uint offset, uint data_pin, uint clock_pin_base) {
     sm_i2s  = pio_claim_unused_sm(pio, true);
+    //printf("sm_i2s:%d\n",sm_i2s);
     uint sm = sm_i2s;
 
     uint8_t func=(pio==pio0)?GPIO_FUNC_PIO0:GPIO_FUNC_PIO1;    // TODO: GPIO_FUNC_PIO0 for pio0 or GPIO_FUNC_PIO1 for pio1
     gpio_set_function(data_pin, func);
     gpio_set_function(clock_pin_base, func);
     gpio_set_function(clock_pin_base+1, func);
+
+    //printf("func:%d\n",func);
 
     pio_sm_config sm_config = audio_i2s_program_get_default_config(offset);
     sm_config_set_out_pins(&sm_config, data_pin, 1);
@@ -66,7 +74,8 @@ static inline void audio_i2s_program_init(PIO pio,  uint offset, uint data_pin, 
     uint32_t divider = system_clock_frequency * 4 / sample_freq; // avoid arithmetic overflow
 
     pio_sm_set_clkdiv_int_frac(pio, sm , divider >> 8u, divider & 0xffu);
-
+    //printf("pio:%d\tsm:%d\n",pio,sm);
+    busy_wait_ms(1);
     pio_sm_set_enabled(pio, sm, true);
 }
 
@@ -75,10 +84,13 @@ static uint32_t trans_count_DMA=1<<30;
 
 void i2s_init(){
     uint offset = pio_add_program(PIO_I2S, &audio_i2s_program);
+    //printf("offset:%d\n",offset);
     audio_i2s_program_init(PIO_I2S, offset, I2S_DATA_PIN , I2S_CLK_BASE_PIN);
 
     int dma_i2s=dma_claim_unused_channel(true);
 	int dma_i2s_ctrl=dma_claim_unused_channel(true);
+
+    //rintf("dma_i2s:%d\tdma_i2s_ctrl:%d\n",dma_i2s,dma_i2s_ctrl);
 
     //основной рабочий канал
 	dma_channel_config cfg_dma = dma_channel_get_default_config(dma_i2s);
