@@ -89,7 +89,7 @@ uint8_t SelectedDrive;
 char* SelectedImage;
 
 #ifndef DEBUG_DISABLE_LOADERS
-extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
+	extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
 #endif
 
 extern char dir_path[];
@@ -484,7 +484,7 @@ void WD1793_Reset(uint8_t drive){
 	}
 	debug_printf(" Error!!! \n");
 	NoDisk = 1;
-	memset(&sd_buffer,0,BUFFERSIZE);
+	memset(sd_buffer,0,BUFFERSIZE);
 	CurrentDiskPos = DEFAULT_DISK_POS;
 	CurrentCommand = WD1793_Cmd_StartIdle;
 	//char strbuf[20]="\0";	//temp string buffer

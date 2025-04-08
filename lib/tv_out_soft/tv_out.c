@@ -1134,7 +1134,7 @@ void graphics_init(){
 	for(int i=0;i<8;i++){
 				gpio_set_slew_rate(beginVideo_PIN+i,GPIO_SLEW_RATE_FAST);
 				pio_gpio_init(PIO_VIDEO, beginVideo_PIN+i);
-				gpio_set_drive_strength(beginVideo_PIN+i,GPIO_DRIVE_STRENGTH_12MA);
+				gpio_set_drive_strength(beginVideo_PIN+i,GPIO_DRIVE_STRENGTH_4MA);
 				gpio_set_slew_rate(beginVideo_PIN+i,GPIO_SLEW_RATE_FAST);
 			}
 	pio_sm_set_consecutive_pindirs(PIO_VIDEO, SM_video, beginVideo_PIN, 8, true);//конфигурация пинов на выход

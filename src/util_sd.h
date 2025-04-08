@@ -27,7 +27,7 @@ extern char files[MAX_FILES+5][FILE_NAME_LEN];
 extern char dir_path[(DIRS_DEPTH+5)*FILE_NAME_LEN];
 extern char activefilename[400];
 extern char afilename[FILE_NAME_LEN+1];
-extern uint8_t sd_buffer[SD_BUFFER_SIZE]; //буфер для работы с файлами
+//extern uint8_t sd_buffer[SD_BUFFER_SIZE]; //буфер для работы с файлами
 extern char filename[260];
 
 #define TOP_DIR_ATTR 0x40

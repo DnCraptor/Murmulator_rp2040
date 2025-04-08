@@ -7,7 +7,7 @@
 #include "screen_util.h"
 
 
-extern uint8_t RAM[ZX_RAM_PAGE_SIZE*8]; //Реальная память куском 128Кб
+extern uint8_t RAM[ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES]; //Реальная память куском 128Кб
 extern uint8_t zx_Border_color;
 
 extern uint8_t sd_buffer[SD_BUFFER_SIZE];

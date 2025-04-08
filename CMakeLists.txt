@@ -23,19 +23,43 @@ if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
 # ====================================================================================
-set(PICO_BOARD pico CACHE STRING "Board type")
+set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards )
+
+set(PICO_BOARD "murmulator" CACHE STRING "Board type")
+set(PICO_PLATFORM "rp2040" CACHE STRING "Chip type")
+#set(PICO_BOARD "murmulator2" CACHE STRING "Board type")
+#set(PICO_PLATFORM "rp2350" CACHE STRING "Chip type")
+
+set (VERSION_MAJOR 0)
+set (VERSION_MINOR 96)
+set (VERSION_PATCH 19)
+set (SOFT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+set (SOFT_VERSION_FN ${VERSION_MAJOR}_${VERSION_MINOR}_${VERSION_PATCH})
+
+configure_file ("src/config.h.in" "../src/config.h" @ONLY)
 
 include(pico_sdk_import.cmake)
 
 project(murmulator C CXX ASM)
 
-SET(PROJECT_NAME murmulator)
-SET(BUILD_NAME "${PROJECT_NAME}")
 
-set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
+
+option(VGA "Enable VGA" OFF)
+option(TFT "Enable TFT display" OFF)
+option(HDMI "Enable HDMI display" OFF)
+option(TV "Enable TV composite output" OFF)
+option(SOFTTV "Enable TV soft composite output" OFF)
+
+SET(PROJECT_NAME "murm_vga-hdmi-tft_${SOFT_VERSION_FN}_m1_p1_2")
+SET(BUILD_NAME "${PROJECT_NAME}_${SOFT_VERSION}")
+
+set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}") #/bin/
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+#set(CMAKE_launchTargetPath "${OUTPUT_DIR}")
+
+
 
 # Heap and Stack size
 set(PICO_HEAP_SIZE 1024)
@@ -50,7 +74,7 @@ add_subdirectory(lib/sound)
 add_subdirectory(lib/video)
 
 # Main Executable
-add_executable(murmulator)
+add_executable(${PROJECT_NAME})
 
 pico_define_boot_stage2(slower_boot2 ${PICO_DEFAULT_BOOT_STAGE2_FILE})
     target_compile_definitions(slower_boot2 PRIVATE PICO_FLASH_SPI_CLKDIV=4)
@@ -66,7 +90,7 @@ message(STATUS "")
 # Source files
 file(GLOB_RECURSE SOURCES src/*.c src/*.cpp)
 message(STATUS "${SOURCES}")
-target_sources(murmulator PRIVATE ${SOURCES})
+target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
 
 # Common options
 add_compile_options(-O2)
@@ -78,7 +102,7 @@ add_definitions(-DPICO_STDIO_USB)
 
 # Link Libraries
 
-target_link_libraries(murmulator PRIVATE
+target_link_libraries(${PROJECT_NAME} PRIVATE
     fatfs
     sdcard
     joysticks
@@ -108,24 +132,24 @@ set(LINK_LIBS "fatfs sdcard joysticks sound")
 # Conditional configurations
 if(DEFINED VGA_HDMI)
     add_definitions(-DVGA_HDMI)
-    target_link_libraries(murmulator video ${LINK_LIBS} ${LINK_LIBS} )
+    target_link_libraries(${PROJECT_NAME} video ${LINK_LIBS} ${LINK_LIBS} )
 elif(DEFINED COMPOSITE_TV)
     add_definitions(-DCOMPOSITE_TV)
-    target_link_libraries(murmulator tv_out ${LINK_LIBS} ${LINK_LIBS} )
+    target_link_libraries(${PROJECT_NAME} tv_out ${LINK_LIBS} ${LINK_LIBS} )
 elif(DEFINED SOFT_COMPOSITE_TV)
     add_definitions(-DSOFT_COMPOSITE_TV -DSOFT_CVBS_NO_HUD)
-    target_link_libraries(murmulator tv_out_soft ${LINK_LIBS} ${LINK_LIBS} )
+    target_link_libraries(${PROJECT_NAME} tv_out_soft ${LINK_LIBS} ${LINK_LIBS} )
 endif()
 
 # Ignore certain libraries in specific environments
 if(DEFINED VGA_HDMI)
-    target_compile_definitions(murmulator PRIVATE -DNO_TV_OUT -DNO_TFT)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DNO_TV_OUT -DNO_TFT)
 elif(DEFINED COMPOSITE_TV)
-    target_compile_definitions(murmulator PRIVATE -DNO_VIDEO -DNO_TFT)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DNO_VIDEO -DNO_TFT)
 elif(DEFINED SOFT_COMPOSITE_TV)
-    target_compile_definitions(murmulator PRIVATE -DNO_VIDEO -DNO_TV_OUT -DNO_TFT)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DNO_VIDEO -DNO_TV_OUT -DNO_TFT)
 endif()
 
 # Output binary and UF2
-pico_add_extra_outputs(murmulator)
+pico_add_extra_outputs(${PROJECT_NAME})
 target_link_options(${PROJECT_NAME} PRIVATE -Xlinker --print-memory-usage --data-sections --function-sections)

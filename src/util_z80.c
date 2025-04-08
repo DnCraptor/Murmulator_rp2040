@@ -7,14 +7,17 @@
 #include "screen_util.h"
 #include "globals.h"
 
+//#define DUMP_DEBUG
 //#define DUMP_PAGES_V1
+//#define DUMP_PAGES_V1_DETAIL
 //#define DUMP_PAGES_V2
+//#define DUMP_PAGES_V2_DETAIL
 //#define DUMP_UNPACK
 //#define DUMP_EXPAND
 //#define DUMP_RAW
 //#define DUMP_BUFFER
 
-extern uint8_t RAM[ZX_RAM_PAGE_SIZE*8]; //Реальная память куском 128Кб
+extern uint8_t RAM[ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES]; //Реальная память куском 128Кб
 extern z80 cpu;
 extern uint8_t zx_RAM_bank_active;
 extern uint8_t* zx_cpu_ram[4];//Адреса 4х областей памяти CPU при использовании страниц
@@ -82,7 +85,9 @@ void readAYState(FileHeader* header){
 	for (uint8_t i=0;i<16;i++){
 		AY_select_reg(i);
 		AY_set_reg(header->AY_Regs[i]);
-		////printf("GET AY[%02d]=%02X\n",i,header->AY_Regs[i]);
+		#ifdef DUMP_DEBUG
+			printf("GET AY[%02d]=%02X\n",i,header->AY_Regs[i]);
+		#endif
 		// cpu._hi_addr_port = 0xFF;
 		// cpu.port_out(&cpu,0xFD,i);
 		// cpu._hi_addr_port = 0xBF;		
@@ -96,7 +101,9 @@ void saveAYState(FileHeader* header){
 	for (uint8_t i=0;i<16;i++){
 		AY_select_reg(i);
 		header->AY_Regs[i] = AY_get_reg(0);
-		////printf("SET AY[%02d]=%02X\n",i,header->AY_Regs[i]);
+		#ifdef DUMP_DEBUG
+			printf("SET AY[%02d]=%02X\n",i,header->AY_Regs[i]);
+		#endif
 	}	
 }
 
@@ -105,7 +112,9 @@ void clearAYState(FileHeader* header){
 	for (uint8_t i=0;i<16;i++){
 		AY_select_reg(i);
 		header->AY_Regs[i] = 0;
-		////printf("SET AY[%02d]=%02X\n",i,header->AY_Regs[i]);
+		#ifdef DUMP_DEBUG
+			printf("SET AY[%02d]=%02X\n",i,header->AY_Regs[i]);
+		#endif
 	}	
 }
 
@@ -115,7 +124,9 @@ void readCPUstate(FileHeader* header,uint8_t im_ver,uint8_t im_hw){
 	if (header->Flags1 == 255){
 		header->Flags1 = 1;
 	}
-	////printf("readCPUstate begin\n");
+	#ifdef DUMP_DEBUG
+		printf("readCPUstate begin\n");
+	#endif
 	
 	cpu.a = header->A;
 	
@@ -137,7 +148,9 @@ void readCPUstate(FileHeader* header,uint8_t im_ver,uint8_t im_hw){
 	cpu.r = cpu.r|(((header->Flags1&1)<<7)&0b10000000);
 	
 	zx_Border_color=(((header->Flags1>>1)&0x7)<<4)|((header->Flags1>>1)&0x7);//дублируем для 4 битного видеобуфера
-	////printf("Border color: %02x -> %02x\n",header->Flags1,zx_Border_color);
+	#ifdef DUMP_DEBUG
+		printf("Border color: %02x -> %02x\n",header->Flags1,zx_Border_color);
+	#endif
 	
 	cpu.d   = header->D; cpu.e   = header->E;	
 	
@@ -158,7 +171,9 @@ void readCPUstate(FileHeader* header,uint8_t im_ver,uint8_t im_hw){
 	cpu.pc = header->PC == 0 ? header->PCVersion2 : header->PC; //cpu.pc  = (header[7]<<8)|(header[6]);
 	
 	cpu.interrupt_mode  = (header->Flags2 & 0b00000011); //Биты 0-1: режим прерываний (0-2)
-	////printf("cpu.interrupt_mode %d\n",cpu.interrupt_mode);
+	#ifdef DUMP_DEBUG
+		printf("cpu.interrupt_mode %d\n",cpu.interrupt_mode);
+	#endif
 	cpu.int_pending = 0;
 	
 	if (im_ver == 1) 
@@ -166,8 +181,10 @@ void readCPUstate(FileHeader* header,uint8_t im_ver,uint8_t im_hw){
 	else 
 		last_out_7ffd = header->PagingState;
 	
-	////printf("im_hw: %d \n",im_hw);
-	////printf("last_out_7ffd: %02X\n", last_out_7ffd);
+	#ifdef DUMP_DEBUG
+		printf("im_hw: %d \n",im_hw);
+		printf("last_out_7ffd: %02X\n", last_out_7ffd);
+	#endif
 	
 	if ((im_hw == 48) && (im_ver  > 1)) last_out_7ffd = 0x30;//last_out_7ffd | 0b00110000; // ??
 	
@@ -180,15 +197,18 @@ void readCPUstate(FileHeader* header,uint8_t im_ver,uint8_t im_hw){
 	if (last_out_7ffd & 16) zx_cpu_ram[0]=zx_rom_bank[0]; else zx_cpu_ram[0] = zx_rom_bank[1]; //5bit = {1 - 48k[R0], 0 - 128k[R1]}
 	//if ((last_out_7ffd & 32)&& (im_hw==48)) zx_state_48k_MODE_BLOCK=true; // 6bit = 1 48k mode block
 	if (last_out_7ffd & 32) zx_state_48k_MODE_BLOCK=true; // 6bit = 1 48k mode block // && (im_hw==48)
-	
-	////printf("last_out_7ffd modified: %02X\n", last_out_7ffd);
+	#ifdef DUMP_DEBUG
+		printf("last_out_7ffd modified: %02X\n", last_out_7ffd);
+	#endif
 	zx_machine_set_7ffd_out(last_out_7ffd);
-	////printf("readCPUstate end\n");
+	#ifdef DUMP_DEBUG
+		printf("readCPUstate end\n");
+	#endif
 }
 
 void saveCPUstate(FileHeader* header){
 
-	////printf("saveCPUstate begin\n");
+	printf("saveCPUstate begin\n");
 
 	memset(header_buf, 0, sizeof(header_buf));
 
@@ -237,15 +257,16 @@ void saveCPUstate(FileHeader* header){
 	
 	header->IF1RomPaged = 0; //Contains 0xff if Interface I rom paged			If in Timex mode, contains last OUT to 0xff
 	header->HWModeState = 0b00000100; //Bit 2: AY sound in use, even on 48K machines   Bit 7: Modify hardware	
-	////printf("saveCPUstate end\n");
+	printf("saveCPUstate end\n");
 }
 
 void GetPageInfo(uint8_t* buffer, uint8_t im_hw, uint8_t pagingState, int8_t* pageNumber, uint16_t* pageSize){
 	*pageSize = buffer[0];
 	*pageSize |= buffer[1] << 8;
 	*pageNumber = buffer[2];
-	
-	//////printf("GetPageInfo_1: pageNumber=%02X, pageSize=%02X, im_hw=%d, pagingState=%d\n",*pageNumber,*pageSize,im_hw,pagingState);
+	#ifdef DUMP_DEBUG
+		printf("GetPageInfo_1: pageNumber=%02X, pageSize=%02X, im_hw=%d, pagingState=%d\n",*pageNumber,*pageSize,im_hw,pagingState);
+	#endif
 	
 	if (im_hw==48){
 		// 48K snapshot
@@ -263,13 +284,17 @@ void GetPageInfo(uint8_t* buffer, uint8_t im_hw, uint8_t pagingState, int8_t* pa
 			*pageNumber = 5;
 			break;
 		}
-		////printf("GetPageInfo: 48K pageNumber=%02X\n",*pageNumber);
+		#ifdef DUMP_DEBUG
+			printf("GetPageInfo: 48K pageNumber=%02X\n",*pageNumber);
+		#endif
 		return;
-		} /*else {
+	} /*else {
 		// 128K snapshot
 		*pageNumber -= 3;
 	}*/
-	////printf("GetPageInfo_2: pageNumber=%02X\n",*pageNumber);
+	#ifdef DUMP_DEBUG
+		printf("GetPageInfo_2: pageNumber=%02X\n",*pageNumber);
+	#endif
 	if (im_hw==128) {
 		/*switch (*pageNumber){
 			case 8:
@@ -291,7 +316,9 @@ void GetPageInfo(uint8_t* buffer, uint8_t im_hw, uint8_t pagingState, int8_t* pa
 		}*/
 		*pageNumber -= 3;
 		if (*pageNumber>7) *pageNumber=0xFF;
-		////printf("GetPageInfo: 128K pageNumber=%02X\n",*pageNumber);
+		#ifdef DUMP_DEBUG
+			printf("GetPageInfo: 128K pageNumber=%02X\n",*pageNumber);
+		#endif
 	}
 }
 
@@ -302,17 +329,17 @@ uint16_t DecompressPage(uint8_t *page, uint16_t pageLength, bool isCompressed,	u
 	for (int i = 0; i < pageLength; i++){
 		#ifdef DUMP_EXPAND
 		if (i==0){
-			//printf("\nBegin\n");
+			printf("\nBegin\n");
 			for (int j = 0; j < 16; j++){
-				//printf(" [%02X]",page[i+j]);
+				printf(" [%02X]",page[i+j]);
 			}
-			//printf("\n");
+			printf("\n");
 		}
 		#endif
 		if (i < pageLength-4){
 			if (page[i] == 0x00 && page[i + 1] == 0xED && page[i + 2] == 0xED && page[i + 3] == 0x00){
 				#ifdef DUMP_UNPACK
-					//printf("\nUsed 1[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
+					printf("\nUsed 1[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
 				#endif
 				*destSize = size-1;
 				return i + 4;
@@ -324,7 +351,7 @@ uint16_t DecompressPage(uint8_t *page, uint16_t pageLength, bool isCompressed,	u
 				int repeat = page[i++];
 				uint8_t value = page[i];
 				#ifdef DUMP_EXPAND
-					//printf("\nExpand: val[%02X]rep[%02X]",value,repeat);
+					printf("\nExpand: val[%02X]rep[%02X]",value,repeat);
 				#endif
 				for (int j = 0; j < repeat; j++){
 					if (maxSize > 0 && size <= maxSize){
@@ -334,8 +361,8 @@ uint16_t DecompressPage(uint8_t *page, uint16_t pageLength, bool isCompressed,	u
 					size++;
 					if ((maxSize > 0 && size > maxSize)||((memory-base_page)>ZX_RAM_PAGE_SIZE)){
 						#ifdef DUMP_UNPACK
-							//printf("\nOverflow by %d\n",repeat-j);
-							//printf("\nUsed 2[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
+							printf("\nOverflow by %d\n",repeat-j);
+							printf("\nUsed 2[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
 						#endif
 						page[i-1] = repeat-j;
 						*destSize = size-1;
@@ -345,7 +372,7 @@ uint16_t DecompressPage(uint8_t *page, uint16_t pageLength, bool isCompressed,	u
 				}
 
 				#ifdef DUMP_EXPAND
-					//printf("addr[%04X]\n",memory-base_page);
+					printf("addr[%04X]\n",memory-base_page);
 				#endif
 				
 				continue;
@@ -357,13 +384,13 @@ uint16_t DecompressPage(uint8_t *page, uint16_t pageLength, bool isCompressed,	u
 		size++;
 		#ifdef DUMP_RAW
 			if((memory-base_page)%48==0){
-				//printf("\naddr[%04X]",memory-base_page);
+				printf("\naddr[%04X]",memory-base_page);
 			}
-			//printf("%02X|",page[i]);
+			printf("%02X|",page[i]);
 		#endif
 		if ((maxSize > 0 && size > maxSize)||((memory-base_page)>ZX_RAM_PAGE_SIZE)){
 			#ifdef DUMP_UNPACK
-				//printf("\nUsed 3[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
+				printf("\nUsed 3[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
 			#endif
 			*destSize = size-1;
 			return i;//i+1;
@@ -373,50 +400,50 @@ uint16_t DecompressPage(uint8_t *page, uint16_t pageLength, bool isCompressed,	u
 	}
 	if((page[pageLength-3]==0xED)&&(page[pageLength-2]==0xED)){ //(page[pageLength-1]!=0xED)&& // &&(page[i+1]== 0xED)
 		#ifdef DUMP_UNPACK
-			//printf("\nUsed 7:[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
+			printf("\nUsed 7:[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
 			for (int j = pageLength-16; j < pageLength; j++){
-				//printf(" [%02X]",page[j]);
+				printf(" [%02X]",page[j]);
 			}
-			//printf("\n");
+			printf("\n");
 		#endif
 		*destSize = size-3;
 		return (pageLength-3);
 	}		
 	if((page[pageLength-2]==0xED)&&(page[pageLength-1]==0xED)){ //(page[pageLength-1]!=0xED)&& // &&(page[i+1]== 0xED)
 		#ifdef DUMP_UNPACK
-			//printf("\nUsed 6:[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
+			printf("\nUsed 6:[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
 			for (int j = pageLength-16; j < pageLength; j++){
-				//printf(" [%02X]",page[j]);
+				printf(" [%02X]",page[j]);
 			}
-			//printf("\n");
+			printf("\n");
 		#endif
 		*destSize = size-2;
 		return (pageLength-2);
 	}
 	if(page[pageLength-1]== 0xED){ //(page[pageLength-1]!=0xED)&& // &&(page[i+1]== 0xED)
 		#ifdef DUMP_UNPACK
-			//printf("\nUsed 5:[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
+			printf("\nUsed 5:[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
 			for (int j = pageLength-16; j < pageLength; j++){
-				//printf(" [%02X]",page[j]);
+				printf(" [%02X]",page[j]);
 			}
-			//printf("\n");
+			printf("\n");
 		#endif
 		*destSize = size-1;
 		return (pageLength-1);
 	}
 
 	#ifdef DUMP_UNPACK
-	//printf("\nUsed 4:[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
+	printf("\nUsed 4:[%08X][%04X][%04X]\n",memory-base_page,pageLength,size);
 	for (int j = pageLength-16; j < pageLength; j++){
-		//printf(" [%02X]",page[j]);
-	} //printf("\n");	
-	////printf(" [%02X]",page[pageLength-3]);
-	////printf(" [%02X]",page[pageLength-2]);
-	////printf(" [%02X]",page[pageLength-1]);
+		printf(" [%02X]",page[j]);
+	} printf("\n");	
+	printf(" [%02X]",page[pageLength-3]);
+	printf(" [%02X]",page[pageLength-2]);
+	printf(" [%02X]",page[pageLength-1]);
 	/*for (uint8_t col=16;col>0;col--){
-		//printf(" [%02X]",page[pageLength-col]);
+		printf(" [%02X]",page[pageLength-col]);
    	}*/
-	//printf("\n");
+	printf("\n");
 	#endif
 	*destSize = size;
 	return pageLength;
@@ -480,17 +507,17 @@ uint16_t CompressPage(uint8_t* page, uint8_t* destMemory,uint16_t maxSize){
 }
 
 /*  memory dump
-	//printf("[%04X] Page 5 Used bytes[%04X]\n",5*ZX_RAM_PAGE_SIZE,usedBytes);
+	printf("[%04X] Page 5 Used bytes[%04X]\n",5*ZX_RAM_PAGE_SIZE,usedBytes);
 	ptr=0;
 	do{
-		//printf("[%04X]",5*ZX_RAM_PAGE_SIZE+ptr);
+		printf("[%04X]",5*ZX_RAM_PAGE_SIZE+ptr);
 		for (uint8_t col=0;col<16;col++){
-			//printf("\t%02X",RAM[5*ZX_RAM_PAGE_SIZE+ptr]);
+			printf("\t%02X",RAM[5*ZX_RAM_PAGE_SIZE+ptr]);
 			ptr++;
 		}
-		//printf("\n");
+		printf("\n");
 	} while(ptr<0x4000);
-	//printf("\n");
+	printf("\n");
 */
 
 bool load_image_z80(char *file_name){
@@ -517,31 +544,41 @@ bool load_image_z80(char *file_name){
 	uint16_t pagePtr;
 	uint16_t destSize=0;
 	DWORD f_pos=0;
-	//printf("------------------------------------------------------------------------------------\n");
-	//printf("load_image_z80\n");
+	#ifdef DUMP_DEBUG
+		printf("------------------------------------------------------------------------------------\n");
+		printf("load_image_z80\n");
+	#endif
 	
 	memset(header_buf, 0, sizeof(header_buf));
 	
 	file_descr = sd_open_file(&sd_file,file_name,FA_READ);
-	//printf("file=%s\n",file_name);
+	#ifdef DUMP_DEBUG
+		printf("file=%s\n",file_name);
+	#endif
 	if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
-	
-	////printf("Begin read\n");
+	#ifdef DUMP_DEBUG
+		printf("Begin read\n");
+	#endif
 	bytesToRead = 30;
 	
 	file_descr = sd_read_file(&sd_file,header_buf,bytesToRead,&bytesRead);
-	////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);
+	#ifdef DUMP_DEBUG
+		printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);
+	#endif
 	if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
 	if (bytesRead != bytesToRead){sd_close_file(&sd_file);return false;}
 	
 	FileHeader* header = (FileHeader*)header_buf;
-	////printf("Header assign\n");
+	#ifdef DUMP_DEBUG
+		printf("Header assign\n");
+	#endif
 	
 	uint8_t pagingState;
 	
-	
-	////printf("Header PC=%04X\n",header->PC);
-	////printf("Header A=%02X\n",header->A);
+	#ifdef DUMP_DEBUG
+		printf("Header PC=%04X\n",header->PC);
+		printf("Header A=%02X\n",header->A);
+	#endif
 	
 	if (header->PC != 0){
 		// version 1
@@ -550,163 +587,201 @@ bool load_image_z80(char *file_name){
 		zx_RAM_bank_active = 0;
 		im_ver = 1;
 		//readCPUstate(header);
-		//printf("*V1\n");
+		printf("*V1\n");
 	} else {
 		bytesToRead=2;
 		file_descr = sd_read_file(&sd_file,&header_buf[30],bytesToRead,&bytesRead);
 		if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-		////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+		#ifdef DUMP_DEBUG
+			printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+		#endif
 		if (bytesRead != bytesToRead){sd_close_file(&sd_file);return false;}
-		
-		//printf("header->AdditionalBlockLength=%d\n",header->AdditionalBlockLength);
+		#ifdef DUMP_DEBUG
+			printf("header->AdditionalBlockLength=%d\n",header->AdditionalBlockLength);
+		#endif
 		
 		bytesToRead = header->AdditionalBlockLength;
 		file_descr = sd_read_file(&sd_file,&header_buf[32],bytesToRead,&bytesRead);
 		if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
-		////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+		#ifdef DUMP_DEBUG
+			printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);
+		#endif
 		if (bytesRead != bytesToRead){sd_close_file(&sd_file);return false;}
 		
 		if (header->AdditionalBlockLength == 23){
 			// version 2
-			//printf("*V2\n");
+			#ifdef DUMP_DEBUG
+			printf("*V2\n");
+			#endif
 			im_hw = (header->HardwareMode >= 3)==true ? 128 : 48;
 			im_ver = 2;
 		} else if (header->AdditionalBlockLength == 54){
 			// version 3
-			//printf("*V3\n");
+			#ifdef DUMP_DEBUG
+				printf("*V3\n");
+			#endif
 			im_hw = (header->HardwareMode >= 4)==true ? 128 : 48;
 			im_ver = 3;
 		} else if (header->AdditionalBlockLength == 55) {
 			// version 4
-			//printf("*V4\n");
+			#ifdef DUMP_DEBUG
+				printf("*V4\n");
+			#endif
 			im_hw = (header->HardwareMode >= 4)==true ? 128 : 48;
 			im_ver = 4;
 		} else {
 			// Invalid
+			#ifdef DUMP_DEBUG
+				printf("Invalid\n");
+			#endif
 			im_ver = -1;
 			im_hw = 128;
 			sd_close_file(&sd_file);
 			return false;
 		}
 	}
-
+	#ifdef DUMP_DEBUG
+		printf("UNPACK v%d\n",im_ver);
+	#endif
 	bool isCompressed;
 	if (im_ver==1) {
+		
 		isCompressed = (header->Flags1 & 0x20) != 0;
-		//printf("isCompressed=%d\n",isCompressed);
-		memset(sd_buffer, 0, sizeof(sd_buffer));
-		bufferIn = (uint8_t*) &sd_buffer;
+		#ifdef DUMP_DEBUG
+			printf("isCompressed=%d\n",isCompressed);
+		#endif
+		memset(&sd_buffer[0], 0, SD_BUFFER_SIZE);
+		bufferIn = (uint8_t*) &sd_buffer[0];
 		int bytesToRead = 0;
 		int pageIndex = 0;
-		////printf(">bufferIn[%08X]\n",bufferIn);
+		#ifdef DUMP_DEBUG
+			printf(">bufferIn[%08X]\n",bufferIn);
+		#endif
 		do{ //for (int pageIndex = 0; pageIndex < 3; pageIndex++)
 			//file_descr = sd_read_file(&sd_file,bufferIn,bytesToRead,&bytesRead);
 			//if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
 				#ifdef DUMP_BUFFER
-				//printf("-------------[buff_dump]-------------\n");
+				printf("-------------[buff_dump]-------------\n");
 				ptr=0;
 				do{
-					//printf("BF--[%04X]",ptr);
+					printf("BF--[%04X]",ptr);
 					for (uint8_t col=0;col<16;col++){
-						//printf("	 %02X",sd_buffer[ptr]);
+						printf("	 %02X",sd_buffer[ptr]);
 						ptr++;
 					}
-					//printf("\n");
-				} while(ptr<sizeof(sd_buffer));
-				//printf("-------------[buff_dump]-------------\n");
+					printf("\n");
+				} while(ptr<SD_BUFFER_SIZE);
+				printf("-------------[buff_dump]-------------\n");
 				#endif
 			//if (!isCompressed && bytesRead != bytesToRead) {sd_close_file(&sd_file);return false;}
 			pageSize = ZX_RAM_PAGE_SIZE;
 			switch (pageIndex) {
 				case 0:
-				//printf("Page:5\n");
+				#ifdef DUMP_DEBUG
+					printf("Page:5\n");
+				#endif
  				bufferOut = &RAM[5*ZX_RAM_PAGE_SIZE];
 				basePage = &RAM[5*ZX_RAM_PAGE_SIZE];
 				break;
 				case 1:
-				//printf("Page:2\n");
+				#ifdef DUMP_DEBUG
+					printf("Page:2\n");
+				#endif
 				bufferOut = &RAM[2*ZX_RAM_PAGE_SIZE];
 				basePage = &RAM[2*ZX_RAM_PAGE_SIZE];
 				break;
 				case 2:
-				//printf("Page:%d\n",zx_RAM_bank_active);
+				#ifdef DUMP_DEBUG
+					printf("Page:%d\n",zx_RAM_bank_active);
+				#endif
 				bufferOut = &RAM[zx_RAM_bank_active*ZX_RAM_PAGE_SIZE];
 				basePage = &RAM[zx_RAM_bank_active*ZX_RAM_PAGE_SIZE];
 				break;
 			}
-			////printf("pageSize[%04X], bytesToRead[%04X]\n",pageSize,bytesToRead);
+			#ifdef DUMP_DEBUG
+				printf("pageSize[%04X], bytesToRead[%04X]\n",pageSize,bytesToRead);
+			#endif
 			do{
 				if(bytesToRead==0){
-					if (pageSize>sizeof(sd_buffer)){
-						bytesToRead = sizeof(sd_buffer);
+					if (pageSize>SD_BUFFER_SIZE){
+						bytesToRead = SD_BUFFER_SIZE;
 					} else {
 						bytesToRead = pageSize;
 					}				
 				}
-				//printf("pageSize[%04lX], bytesToRead[%04X]\n",pageSize,bytesToRead);				
-				f_pos = sd_file_pos(&sd_file);				
-				////printf(">bufferIn[%08X]\n",bufferIn);
+				#ifdef DUMP_DEBUG
+					printf("pageSize[%04lX], bytesToRead[%04X]\n",pageSize,bytesToRead);				
+				#endif
+				f_pos = sd_file_pos(&sd_file);
+				#ifdef DUMP_DEBUG
+					printf(">bufferIn[%08X]\n",bufferIn);
+				#endif
 				file_descr = sd_read_file(&sd_file,bufferIn,bytesToRead,&bytesRead);
 				if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-				//printf("bytesToRead[%04X], bytesRead[%04X], pos[%04lX]\n",bytesToRead,bytesRead,f_pos);
+				#ifdef DUMP_DEBUG
+					printf("bytesToRead[%04X], bytesRead[%04X], pos[%04lX]\n",bytesToRead,bytesRead,f_pos);
+				#endif
 				//if (f_pos == sd_file_size(&sd_file)){sd_close_file(&sd_file);return false;}
 				#ifdef DUMP_BUFFER
-					//printf("-------------[buff_dump]-------------\n");
+					printf("-------------[buff_dump]-------------\n");
 					ptr=0;
 					do{
-						//printf("----[%04X]",ptr);
+						printf("----[%04X]",ptr);
 						for (uint8_t col=0;col<16;col++){
-							//printf("	 %02X",sd_buffer[ptr]);
+							printf("	 %02X",sd_buffer[ptr]);
 							ptr++;
 						}
-						//printf("\n");
-					} while(ptr<sizeof(sd_buffer));
-					//printf("-------------[buff_dump]-------------\n");
+						printf("\n");
+					} while(ptr<SD_BUFFER_SIZE);
+					printf("-------------[buff_dump]-------------\n");
 				#endif	
 
 				
 				if (isCompressed){
-				
-					////printf("*Buff_before[%08X]\n",bufferOut);
-					//usedBytes = DecompressPage(sd_buffer, sizeof(sd_buffer), isCompressed, pageSize, bufferOut, &destSize,basePage);
-					usedBytes = DecompressPage(sd_buffer, sizeof(sd_buffer), isCompressed, ZX_RAM_PAGE_SIZE, bufferOut, &destSize,basePage);	
+					#ifdef DUMP_DEBUG
+						printf("*Buff_before[%08X]\n",bufferOut);
+					#endif
+					//usedBytes = DecompressPage(sd_buffer, SD_BUFFER_SIZE, isCompressed, pageSize, bufferOut, &destSize,basePage);
+					usedBytes = DecompressPage(&sd_buffer[0], SD_BUFFER_SIZE, isCompressed, ZX_RAM_PAGE_SIZE, bufferOut, &destSize,basePage);	
 					bufferOut+=destSize;
-					////printf("*Buff_after[%08X][%04X]\n",bufferOut,destSize);
-					unusedBytes = sizeof(sd_buffer) - usedBytes; // part of next page(s)
-					pageSize-=sizeof(sd_buffer);
+					#ifdef DUMP_DEBUG
+						printf("*Buff_after[%08X][%04X]\n",bufferOut,destSize);
+					#endif
+					unusedBytes = SD_BUFFER_SIZE - usedBytes; // part of next page(s)
+					pageSize-=SD_BUFFER_SIZE;
 					bytesToRead = usedBytes;
 					for (int i = 0; i < unusedBytes; i++){sd_buffer[i] = sd_buffer[i + usedBytes];}
-					for (int i = unusedBytes; i < sizeof(sd_buffer); i++){sd_buffer[i] = 0;}
+					for (int i = unusedBytes; i < SD_BUFFER_SIZE; i++){sd_buffer[i] = 0;}
 					//bufferIn+=usedBytes;
 					bufferIn = &sd_buffer[unusedBytes];
 					#ifdef DUMP_PAGES_V1
-					//printf("*Used bytes[%04X]\n",usedBytes);
-					//printf("*Unused bytes[%04X]\n",unusedBytes);
+						printf("*Used bytes[%04X]\n",usedBytes);
+						printf("*Unused bytes[%04X]\n",unusedBytes);
 					#endif
 					unusedBytes=0;
 					usedBytes=0;
 				} else {
 					memcpy(bufferOut,bufferIn,bytesRead);
 					bufferOut+=pageSize;
-					pageSize-=sizeof(sd_buffer);
-					bufferIn = (uint8_t*) &sd_buffer;
-					bytesToRead = sizeof(sd_buffer);
+					pageSize-=SD_BUFFER_SIZE;
+					bufferIn = (uint8_t*) &sd_buffer[0];
+					bytesToRead = SD_BUFFER_SIZE;
 				}
 
 			}while(pageSize>0);
-			#ifdef DUMP_PAGES_V1
-				//printf("Page%d Used bytes[%04X]\n",pageIndex,usedBytes);
+			#ifdef DUMP_PAGES_V1_DETAIL
+				printf("Page%d Used bytes[%04X]\n",pageIndex,usedBytes);
 				ptr=0;
 				uint8_t* memory = bufferOut-ZX_RAM_PAGE_SIZE;
 				do{
-					//printf("Page[%04X]",ptr);
+					printf("Page %d[%04X]",pageIndex,ptr);
 					for (uint8_t col=0;col<16;col++){
-						//printf("	 %02X",memory[ptr]);
+						printf("	 %02X",memory[ptr]);
 						ptr++;
 					}
-					//printf("\n");
+					printf("\n");
 				} while(ptr<ZX_RAM_PAGE_SIZE);
-				//printf("\n");
+				printf("\n");
 			#endif
 			pageIndex++;
 		}while(sd_file_pos(&sd_file)<sd_file_size(&sd_file));
@@ -719,7 +794,9 @@ bool load_image_z80(char *file_name){
 		bytesToRead = 3;
 		file_descr = sd_read_file(&sd_file,&buf,bytesToRead,&bytesRead);
 		if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-		////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+		#ifdef DUMP_DEBUG
+			printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);
+		#endif
 		if (bytesRead != bytesToRead){sd_close_file(&sd_file);return false;}
 		MemBlock* block = (MemBlock*) buf;
 		// Get pageSize and pageNumber
@@ -727,79 +804,96 @@ bool load_image_z80(char *file_name){
 		pageNumber = block->PageNum;
 		f_pos = sd_file_pos(&sd_file);
 		GetPageInfo((uint8_t*)&buf, im_hw, pagingState, &pageNumber, (uint16_t*)&pageSize);
-		//#ifdef DUMP_PAGES_V2
-			//printf("MemBlock: pageNumber[%02X], pageSize[%02lX] f_pos[%02lX]\n",pageNumber,pageSize,f_pos);
-		//#endif
+		#ifdef DUMP_PAGES_V2
+			printf("MemBlock: pageNumber[%02X], pageSize[%02lX] f_pos[%02lX]\n",pageNumber,pageSize,f_pos);
+		#endif
 
 		do{
-			////printf(">DATA: page[%02X],size[%04X]\n",pageNumber,pageSize);
+			#ifdef DUMP_DEBUG
+				printf(">DATA: page[%02X],size[%04X]\n",pageNumber,pageSize);
+			#endif
 			isCompressed = (pageSize<0xFFFF);
 			if (!isCompressed){
 				pageSize = ZX_RAM_PAGE_SIZE;
 			}
-			////printf(">MemPtr[%04X]\n",pageNumber*ZX_RAM_PAGE_SIZE);
+			#ifdef DUMP_DEBUG
+				printf(">PAGE[%04d]\n",pageNumber);
+			#endif
+			printf(">PAGE[%04d]\n",pageNumber);
 			if (pageNumber<8){
 				bufferOut = &RAM[pageNumber*ZX_RAM_PAGE_SIZE];
 				basePage = &RAM[pageNumber*ZX_RAM_PAGE_SIZE];
-				bufferIn = (uint8_t*)&sd_buffer;
+				bufferIn = (uint8_t*)&sd_buffer[0];
 				bytesToRead = 0;
 				do{ // Read page into tempBuffer and unpack
-					if (pageSize>sizeof(sd_buffer)){
-						bytesToRead = sizeof(sd_buffer);
+					if (pageSize>SD_BUFFER_SIZE){
+						bytesToRead = SD_BUFFER_SIZE;
 					} else {
 						bytesToRead = pageSize;
 					}
-					////printf(">bufferIn[%08X]\n",bufferIn);
+					#ifdef DUMP_DEBUG
+						printf(">bufferIn[%08X]\n",bufferIn);
+					#endif
 					file_descr = sd_read_file(&sd_file,bufferIn,bytesToRead,&bytesRead);
 					if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
 					f_pos = sd_file_pos(&sd_file);
-					////printf("bytesToRead[%04X], bytesRead[%04X], pos[%04X]\n",bytesToRead,bytesRead,f_pos);
+					#ifdef DUMP_DEBUG
+						printf("bytesToRead[%04X], bytesRead[%04X], pos[%04X]\n",bytesToRead,bytesRead,f_pos);
+					#endif
 					//if (f_pos == sd_file_size(&sd_file)){sd_close_file(&sd_file);return false;}
 					if (isCompressed){
-						////printf("*Buff_before[%08X]\n",bufferOut);
-						usedBytes = DecompressPage(sd_buffer, sizeof(sd_buffer), isCompressed, ZX_RAM_PAGE_SIZE, bufferOut, &destSize,basePage);
-						//usedBytes = DecompressPage(sd_buffer, sizeof(sd_buffer), isCompressed, pageSize, bufferOut, &destSize,basePage);
+						#ifdef DUMP_DEBUG
+							printf("*Buff_before[%08X]\n",bufferOut);
+						#endif
+						usedBytes = DecompressPage(sd_buffer, SD_BUFFER_SIZE, isCompressed, ZX_RAM_PAGE_SIZE, bufferOut, &destSize,basePage);
+						//usedBytes = DecompressPage(sd_buffer, SD_BUFFER_SIZE, isCompressed, pageSize, bufferOut, &destSize,basePage);
 						bufferOut+=destSize;
-						////printf("*Buff_after[%08X][%04X]\n",bufferOut,destSize);
-						unusedBytes = sizeof(sd_buffer) - usedBytes; // part of next page(s)
-						pageSize-=sizeof(sd_buffer);
+						#ifdef DUMP_DEBUG
+							printf("*Buff_after[%08X][%04X]\n",bufferOut,destSize);
+						#endif
+						unusedBytes = SD_BUFFER_SIZE - usedBytes; // part of next page(s)
+						pageSize-=SD_BUFFER_SIZE;
 						bytesToRead = usedBytes;
 						for (int i = 0; i < unusedBytes; i++){sd_buffer[i] = sd_buffer[i + usedBytes];}
-						for (int i = unusedBytes; i < sizeof(sd_buffer); i++){sd_buffer[i] = 0;}
+						for (int i = unusedBytes; i < SD_BUFFER_SIZE; i++){sd_buffer[i] = 0;}
 						bufferIn = &sd_buffer[unusedBytes];
 						#ifdef DUMP_PAGES_V2
-						//printf("*Used bytes[%04X]\n",usedBytes);
-						//printf("*Unused bytes[%04X]\n",unusedBytes);
+							printf("*Used bytes[%04X]\n",usedBytes);
+							printf("*Unused bytes[%04X]\n",unusedBytes);
 						#endif
 						unusedBytes=0;
 						usedBytes=0;
-						////printf("*pageSize[%04X]\n",pageSize);
+						#ifdef DUMP_DEBUG
+							printf("*pageSize[%04X]\n",pageSize);
+						#endif
 					} else {
-						memcpy(bufferOut,sd_buffer,sizeof(sd_buffer));
-						bufferOut+=sizeof(sd_buffer);
-						pageSize-=sizeof(sd_buffer);
-						bytesToRead=sizeof(sd_buffer);
+						memcpy(bufferOut,&sd_buffer[0],SD_BUFFER_SIZE);
+						bufferOut+=SD_BUFFER_SIZE;
+						pageSize-=SD_BUFFER_SIZE;
+						bytesToRead=SD_BUFFER_SIZE;
 					}
 				}while (pageSize>0);
 				
-				#ifdef DUMP_PAGES_V2
-					//printf("------\n");
-					//printf("Page[%d]\n",pageNumber);
+				#ifdef DUMP_PAGES_V2_DETAIL
+					printf("------\n");
+					printf("Page[%d]\n",pageNumber);
 					ptr=0;
 					uint8_t* memory = bufferOut-ZX_RAM_PAGE_SIZE;
 					do{
-						//printf("Page[%04X]",ptr);
+						printf("Page[%04X]",ptr);
 						for (uint8_t col=0;col<32;col++){
-							//printf("	 %02X",memory[ptr]);
+							printf("	 %02X",memory[ptr]);
 							ptr++;
 						}
-						//printf("\n");
+						printf("\n");
 					} while(ptr<ZX_RAM_PAGE_SIZE);
-					//printf("\n");
+					printf("\n");
 				#endif
 			} else {
 				// Move forward without reading
-				//printf("Move forward without reading\n");
+				#ifdef DUMP_DEBUG
+					printf("Move forward without reading\n");
+				#endif
 				if (sd_seek_file(&sd_file,sd_file_pos(&sd_file)+pageSize) != FR_OK){
 					sd_close_file(&sd_file);
 					return false;
@@ -809,14 +903,18 @@ bool load_image_z80(char *file_name){
 			bytesToRead = 3;
 			file_descr = sd_read_file(&sd_file,&buf,bytesToRead,&bytesRead);
 			if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-			////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+			#ifdef DUMP_DEBUG
+				printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+			#endif
 			if ((bytesRead != bytesToRead) &&(sd_file_pos(&sd_file)<sd_file_size(&sd_file)) ){sd_close_file(&sd_file);return false;}
 			if (bytesRead == 3){
 				pageSize = block->Size;
 				pageNumber = block->PageNum;
 				f_pos = sd_file_pos(&sd_file);
 				GetPageInfo((uint8_t*)&buf, im_hw, pagingState, &pageNumber, (uint16_t*)&pageSize);
-				//printf("MemBlock: pageNumber[%02X], pageSize[%02lX] f_pos[%02lX]\n",pageNumber,pageSize,f_pos);
+				#ifdef DUMP_DEBUG
+					printf("MemBlock: pageNumber[%02X], pageSize[%02lX] f_pos[%02lX]\n",pageNumber,pageSize,f_pos);
+				#endif
 				if (pageNumber<0){
 					return false;
 				}
@@ -828,7 +926,9 @@ bool load_image_z80(char *file_name){
 		if ( ((header->HWModeState&0b00000100) && ((im_hw == 48) &&  (im_ver > 1)))  || im_hw == 128 ){
 			readAYState(header);
 		} else {
-			//printf("No AY Init\n");
+			#ifdef DUMP_DEBUG
+				printf("No AY Init\n");
+			#endif
 		}
 		readCPUstate(header,im_ver,im_hw);
 	}
@@ -855,29 +955,36 @@ bool LoadScreenFromZ80Snapshot(char *file_name){
 	uint16_t destSize=0;
 	uint16_t usedBytes=0;
 	uint16_t unusedBytes=0;
-
-	//printf("load_screen_z80\n");
+	#ifdef DUMP_DEBUG
+		printf("load_screen_z80\n");
+	#endif
 	memset(header_buf, 0, sizeof(header_buf));
-	memset(sd_buffer, 0, sizeof(sd_buffer));
+	memset(&sd_buffer[0], 0, SD_BUFFER_SIZE);
 	memset(fileinfo, 0, sizeof(fileinfo));
 	memset(sound, 0, sizeof(sound));
 
 	
 	file_descr = sd_open_file(&sd_file,file_name,FA_READ);
-	////printf("sd_open_file=%d\n",file_descr);
+	#ifdef DUMP_DEBUG
+		printf("sd_open_file=%d\n",file_descr);
+	#endif
 	if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
-
-	////printf("Begin read\n");
+	#ifdef DUMP_DEBUG
+		printf("Begin read\n");
+	#endif
 	bytesToRead = 30;
 	//sleep_ms(100);
 	file_descr = sd_read_file(&sd_file,header_buf,bytesToRead,&bytesRead);
 	if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
-	////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);
+	#ifdef DUMP_DEBUG
+		printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);
+	#endif
 	if (bytesRead != bytesToRead){sd_close_file(&sd_file);return false;}
 		
 	FileHeader* header = (FileHeader*)header_buf;
-		
-	////printf("Header assign\n");
+	#ifdef DUMP_DEBUG
+		printf("Header assign\n");
+	#endif
 	//uint8_t borderColor = (header->Flags1 & 0x0E) >> 1;
 		
 	bool isCompressed;
@@ -885,44 +992,56 @@ bool LoadScreenFromZ80Snapshot(char *file_name){
 		// version 1
 		im_hw = 48;
 		im_ver = 1;
-		//printf("Version: %d, Hardware: %d\n",im_ver,im_hw);
+		#ifdef DUMP_DEBUG
+			printf("Version: %d, Hardware: %d\n",im_ver,im_hw);
+		#endif
 		isCompressed = (header->Flags1 & 0x20) != 0;
-		bufferOut = (sizeof(sd_buffer)>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
-		bufferIn = (uint8_t*)&sd_buffer;
+		bufferOut = (SD_BUFFER_SIZE>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
+		bufferIn = (uint8_t*) &sd_buffer[0]; 
 		//memset(bufferOut, 0, 0x1B00);
 		pageSize = 0x1B00;
 		do{
-			if (pageSize>sizeof(sd_buffer)){
-				bytesToRead = sizeof(sd_buffer);
+			if (pageSize>SD_BUFFER_SIZE){
+				bytesToRead = SD_BUFFER_SIZE;
 			} else {
 				bytesToRead = pageSize;
 			}
 			file_descr = sd_read_file(&sd_file,bufferIn,bytesToRead,&bytesRead);
 			if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-			////printf("*bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);
+			#ifdef DUMP_DEBUG
+				printf("*bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);
+			#endif
 			if (bytesRead != bytesToRead){sd_close_file(&sd_file);return false;}
-			////printf("*Buff_before[%08X]\n",bufferOut);
-			usedBytes = DecompressPage(sd_buffer, bytesToRead, isCompressed, 0x1B00, bufferOut, &destSize,bufferOut);
+			#ifdef DUMP_DEBUG
+				printf("*Buff_before[%08X]\n",bufferOut);
+			#endif
+			usedBytes = DecompressPage(&sd_buffer[0], bytesToRead, isCompressed, 0x1B00, bufferOut, &destSize,bufferOut);
 			if(destSize>=0x1B00){break;}
 			bufferOut+=destSize;
-			////printf("*Buff_after[%08X][%04X]\n",bufferOut,destSize);
-			unusedBytes = sizeof(sd_buffer) - usedBytes; // part of next page(s)
+			#ifdef DUMP_DEBUG
+				printf("*Buff_after[%08X][%04X]\n",bufferOut,destSize);
+			#endif
+			unusedBytes = SD_BUFFER_SIZE - usedBytes; // part of next page(s)
 			pageSize-=bytesToRead;
-			if((sizeof(sd_buffer)>=ZX_RAM_PAGE_SIZE)&&(pageSize<=0)){break;};
+			if((SD_BUFFER_SIZE>=ZX_RAM_PAGE_SIZE)&&(pageSize<=0)){break;};
 			bytesToRead = usedBytes;
 			for (int i = 0; i < unusedBytes; i++){sd_buffer[i] = sd_buffer[i + usedBytes];}
-			for (int i = unusedBytes; i < sizeof(sd_buffer); i++){sd_buffer[i] = 0;}
+			for (int i = unusedBytes; i < SD_BUFFER_SIZE; i++){sd_buffer[i] = 0;}
 			bufferIn = &sd_buffer[unusedBytes];
 			#ifdef DUMP_PAGES_V1
-			//printf("*Used bytes[%04X]\n",usedBytes);
-			//printf("*Unused bytes[%04X]\n",unusedBytes);
+				printf("*Used bytes[%04X]\n",usedBytes);
+				printf("*Unused bytes[%04X]\n",unusedBytes);
 			#endif
 			unusedBytes=0;
 			usedBytes=0;
-			//printf("*PS[%04lX]\n",pageSize);
+			#ifdef DUMP_DEBUG
+				printf("*PS[%04lX]\n",pageSize);
+			#endif
 		}while (pageSize>0);
-		bufferOut = (sizeof(sd_buffer)>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
-		////printf("buffer[%04X]\n",bufferOut);
+		bufferOut = (SD_BUFFER_SIZE>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
+		#ifdef DUMP_DEBUG
+			printf("buffer[%04X]\n",bufferOut);
+		#endif
 		ShowScreenshot(bufferOut,PREVIEW_POS_X,PREVIEW_POS_Y);
 		memset(fileinfo, 0, sizeof(fileinfo));
 		sprintf(fileinfo,"Type:.z80 Ver:%d",im_ver);
@@ -940,32 +1059,45 @@ bool LoadScreenFromZ80Snapshot(char *file_name){
 		bytesToRead=2;
 		file_descr = sd_read_file(&sd_file,&header_buf[30],bytesToRead,&bytesRead);
 		if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-		////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+		#ifdef DUMP_DEBUG
+			printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);
+		#endif
 		if (bytesRead != bytesToRead){sd_close_file(&sd_file);return false;}
 
 		bytesToRead = header->AdditionalBlockLength;
 		file_descr = sd_read_file(&sd_file,&header_buf[32],bytesToRead,&bytesRead);
 		if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
-		////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+		#ifdef DUMP_DEBUG
+			printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+		#endif
 		if (bytesRead != bytesToRead){sd_close_file(&sd_file);return false;}		
 		
 		if (header->AdditionalBlockLength == 23){
 			// version 2
-			////printf("*V2\n");
+			#ifdef DUMP_DEBUG
+				printf("*V2\n");
+			#endif
 			im_hw = (header->HardwareMode >= 3)==true ? 128 : 48;
 			im_ver = 2;
 		} else if (header->AdditionalBlockLength == 54){
 			// version 3
-			////printf("*V3\n");
+			#ifdef DUMP_DEBUG
+				printf("*V3\n");
+			#endif
 			im_hw = (header->HardwareMode >= 4)==true ? 128 : 48;
 			im_ver = 3;
 		} else if (header->AdditionalBlockLength == 55) {
 			// version 4
-			////printf("*V4\n");
+			#ifdef DUMP_DEBUG
+				printf("*V4\n");
+			#endif
 			im_hw = (header->HardwareMode >= 4)==true ? 128 : 48;
 			im_ver = 4;
 		} else {
 			// Invalid
+			#ifdef DUMP_DEBUG
+				printf("Invalid\n");
+			#endif
 			im_ver = -1;
 			im_hw = 128;
 			return false;
@@ -988,22 +1120,24 @@ bool LoadScreenFromZ80Snapshot(char *file_name){
 		memset(fileinfo, 0, sizeof(fileinfo));
 		//strncpy(fileinfo,file_name,22);
 		//strncpy(fileinfo,"A:/",3);
-		/*//printf("FileInfo\t");
+		/*printf("FileInfo\t");
 		for(uint8_t chr=0; chr<sizeof(fileinfo);chr++){
-			//printf(" [%02X] ",fileinfo[chr]);
-		};//printf("\n");*/
+			printf(" [%02X] ",fileinfo[chr]);
+		};printf("\n");*/
 
 		//draw_text_len(18+FONT_W*14,224, fileinfo,COLOR_TEXT,COLOR_BACKGOUND,22);
-		/*//printf("Buf\n");
+		/*printf("Buf\n");
 		for(uint8_t chr=0; chr<sizeof(buf);chr++){
-			//printf(" [%02X] ",buf[chr]);
-		};//printf("\n");*/
-
+			printf(" [%02X] ",buf[chr]);
+		};printf("\n");*/
+		
 		pagingState = header->PagingState;
 		bytesToRead = 3;
 		file_descr = sd_read_file(&sd_file,&buf,bytesToRead,&bytesRead);
 		if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-		////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+		#ifdef DUMP_DEBUG
+			printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+		#endif
 		if (bytesRead != bytesToRead){sd_close_file(&sd_file);return false;}
 		MemBlock* block = (MemBlock*) buf;
 		// Get pageSize and pageNumber
@@ -1015,83 +1149,101 @@ bool LoadScreenFromZ80Snapshot(char *file_name){
 			if (!isCompressed){
 				pageSize = ZX_RAM_PAGE_SIZE;
 			}
-			////printf("DATA: Size:%04lX, page:%02X, compressed:%d\n",pageSize,pageNumber,isCompressed);
-			////printf("MemPtr=%04X\n",pageNumber*ZX_RAM_PAGE_SIZE);
+			#ifdef DUMP_DEBUG
+				printf("DATA: Size:%04lX, page:%02X, compressed:%d\n",pageSize,pageNumber,isCompressed);
+				printf("MemPtr=%04X\n",pageNumber*ZX_RAM_PAGE_SIZE);
+			#endif
 			if (pageNumber == 5){// This page contains screenshoot
 				pageSize = 0x1B00;
-				bufferOut = (sizeof(sd_buffer)>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
+				bufferOut = (SD_BUFFER_SIZE>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
 				//memset(bufferOut, 0, 0x2000);
-				////printf("SDB[%08X],SDBI[%08X],RAMB[%08X]\n",&sd_buffer,&sd_buffer[0x2000],&RAM[5*ZX_RAM_PAGE_SIZE]);
-				bufferIn = (uint8_t*)&sd_buffer;				
+				#ifdef DUMP_DEBUG
+					printf("SDB[%08X],SDBI[%08X],RAMB[%08X]\n",&sd_buffer,&sd_buffer[0x2000],&RAM[5*ZX_RAM_PAGE_SIZE]);
+				#endif
+				bufferIn = (uint8_t*) &sd_buffer[0];
 				if (isCompressed){
 					do{ // Read page into tempBuffer and unpack
-						if (pageSize>sizeof(sd_buffer)){
-							bytesToRead = sizeof(sd_buffer);
+						if (pageSize>SD_BUFFER_SIZE){
+							bytesToRead = SD_BUFFER_SIZE;
 						} else {
 							bytesToRead = pageSize;
 						}
 						DWORD f_pos = sd_file_pos(&sd_file);
-						////printf(">bufferIn[%08X]\n",bufferIn);
+						#ifdef DUMP_DEBUG
+							printf(">bufferIn[%08X]\n",bufferIn);
+						#endif
 						file_descr = sd_read_file(&sd_file,bufferIn,bytesToRead,&bytesRead);
 						if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-						////printf("bytesToRead[%04X], bytesRead[%04X], pos[%04X]\n",bytesToRead,bytesRead,f_pos);
+						#ifdef DUMP_DEBUG
+							printf("bytesToRead[%04X], bytesRead[%04X], pos[%04X]\n",bytesToRead,bytesRead,f_pos);
+							printf("\n*Buff_before[%08lX]\n",bufferOut);
+						#endif
 						//if (f_pos == sd_file_size(&sd_file)){sd_close_file(&sd_file);return false;}
-						////printf("\n*Buff_before[%08lX]\n",bufferOut);
-						usedBytes = DecompressPage(sd_buffer, bytesToRead, isCompressed, 0x1B00, bufferOut, &destSize,bufferOut);
+						usedBytes = DecompressPage(&sd_buffer[0], bytesToRead, isCompressed, 0x1B00, bufferOut, &destSize,bufferOut);
 						if(destSize>=0x1B00){break;}
 						bufferOut+=destSize;
-						////printf("\n*Buff_after[%08X][%04X]\n",bufferOut,destSize);
-						unusedBytes = sizeof(sd_buffer) - usedBytes; // part of next page(s)
+						#ifdef DUMP_DEBUG
+							printf("\n*Buff_after[%08X][%04X]\n",bufferOut,destSize);
+						#endif
+						unusedBytes = SD_BUFFER_SIZE - usedBytes; // part of next page(s)
 						pageSize-=bytesToRead;
-						if((sizeof(sd_buffer)>=ZX_RAM_PAGE_SIZE)&&(pageSize<=0)){break;};
+						if((SD_BUFFER_SIZE>=ZX_RAM_PAGE_SIZE)&&(pageSize<=0)){break;};
 						bytesToRead = usedBytes;
 						for (int i = 0; i < unusedBytes; i++){sd_buffer[i] = sd_buffer[i + usedBytes];}
-						for (int i = unusedBytes; i < sizeof(sd_buffer); i++){sd_buffer[i] = 0;}
+						for (int i = unusedBytes; i < SD_BUFFER_SIZE; i++){sd_buffer[i] = 0;}
 						bufferIn = &sd_buffer[unusedBytes];
-						//#ifdef DUMP_PAGES_V1
-						//printf("*Used bytes[%04X]\n",usedBytes);
-						//printf("*Unused bytes[%04X]\n",unusedBytes);
-						//#endif
+						#ifdef DUMP_PAGES_V1
+							printf("*Used bytes[%04X]\n",usedBytes);
+							printf("*Unused bytes[%04X]\n",unusedBytes);
+						#endif
 						unusedBytes=0;
 						usedBytes=0;
-						//printf("*pageSize[%04lX]\n",pageSize);
+						#ifdef DUMP_DEBUG
+							printf("*pageSize[%04lX]\n",pageSize);
+						#endif
 					}while (pageSize>0);
-					//bufferOut = (sizeof(sd_buffer)>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];					
+					//bufferOut = (SD_BUFFER_SIZE>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];					
 				} else {
-					//bufferOut = (sizeof(sd_buffer)>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
-					////printf("*Buff_before[%08X]\n",bufferOut);
+					//bufferOut = (SD_BUFFER_SIZE>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
+					printf("*Buff_before[%08X]\n",bufferOut);
 					bytesToRead=pageSize;
 					DWORD f_pos = sd_file_pos(&sd_file);
 					file_descr = sd_read_file(&sd_file,bufferOut,bytesToRead,&bytesRead);
 					if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-					////printf("bytesToRead[%04X], bytesRead[%04X], pos[%04X]\n",bytesToRead,bytesRead,f_pos);
-					////printf("*Buff_after[%08X]\n",bufferOut);
+					#ifdef DUMP_DEBUG
+						printf("bytesToRead[%04X], bytesRead[%04X], pos[%04X]\n",bytesToRead,bytesRead,f_pos);
+						printf("*Buff_after[%08X]\n",bufferOut);
+					#endif
 				}
-				////printf("BFIN[%04X],BFOUT[%04X]\n",bufferIn,bufferOut);
-				
-				////printf("BFIN[%04X],BFOUT[%04X]\n",bufferIn,bufferOut);
-				
-				////printf("Page%d Used bytes[%04X]\n",pageNumber,usedBytes);
+				#ifdef DUMP_DEBUG
+					printf("BFIN[%04X],BFOUT[%04X]\n",bufferIn,bufferOut);
+					printf("BFIN[%04X],BFOUT[%04X]\n",bufferIn,bufferOut);
+					printf("Page%d Used bytes[%04X]\n",pageNumber,usedBytes);
+				#endif
 				/*uint16_t ptr=0;
 				do{
-					//printf("Page%d[%04X]",pageNumber,sd_buffer+ptr);
+					printf("Page%d[%04X]",pageNumber,sd_buffer+ptr);
 					for (uint8_t col=0;col<32;col++){
-						//printf("	 %02X",sd_buffer[ptr]);
+						printf("	 %02X",sd_buffer[ptr]);
 						ptr++;
 					}
-					//printf("\n");
+					printf("\n");
 				} while(ptr<0x4000);
-				//printf("\n");*/
+				printf("\n");*/
 				
-				bufferOut = (sizeof(sd_buffer)>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
-				////printf("BF[%04X],BF[%04X],BF[%04X]\n",sd_buffer,&sd_buffer[0x2000],bufferOut);
+				bufferOut = (SD_BUFFER_SIZE>=ZX_RAM_PAGE_SIZE) ? &sd_buffer[0x2000] : &RAM[5*ZX_RAM_PAGE_SIZE];
+				#ifdef DUMP_DEBUG
+					printf("BF[%04X],BF[%04X],BF[%04X]\n",sd_buffer,&sd_buffer[0x2000],bufferOut);
+				#endif
 				ShowScreenshot(bufferOut,PREVIEW_POS_X,PREVIEW_POS_Y);
-				////printf("Show screen\n");
+				#ifdef DUMP_DEBUG
+					printf("Show screen\n");
+				#endif
 				sd_close_file(&sd_file);
 				return true;
 			} else	{
 				// Move forward without reading
-				////printf("Move forward without reading to [%08X]\n",sd_file_pos(&sd_file)+pageSize);
+				printf("Move forward without reading to [%08X]\n",sd_file_pos(&sd_file)+pageSize);
 				if (sd_seek_file(&sd_file,sd_file_pos(&sd_file)+pageSize) != FR_OK){
 					sd_close_file(&sd_file);
 					return false;
@@ -1101,13 +1253,17 @@ bool LoadScreenFromZ80Snapshot(char *file_name){
 			bytesToRead = 3;
 			file_descr = sd_read_file(&sd_file,&buf,bytesToRead,&bytesRead);
 			if (file_descr != FR_OK){sd_close_file(&sd_file);return false;}
-			////printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+			#ifdef DUMP_DEBUG
+				printf("bytesToRead=%d, bytesRead=%d\n",bytesToRead,bytesRead);			
+			#endif
 			if ((bytesRead != bytesToRead) &&(sd_file_pos(&sd_file)<sd_file_size(&sd_file)) ){sd_close_file(&sd_file);return false;}
 			if (bytesRead == 3){
 				pageSize = block->Size;
 				pageNumber = block->PageNum;				
 				GetPageInfo((uint8_t*)&buf, im_hw, pagingState, &pageNumber, (uint16_t*)&pageSize);
-				////printf("PageInfo: pageNumber=%02X, pageSize=%02X\n",pageNumber,pageSize);
+				#ifdef DUMP_DEBUG
+					printf("PageInfo: pageNumber=%02X, pageSize=%02X\n",pageNumber,pageSize);
+				#endif
 			} else  {
 				pageSize = 0;
 			}
@@ -1129,8 +1285,9 @@ bool save_image_z80(char *file_name){
 	uint16_t writeBytes=0;
 	DWORD f_pos_size = 0;
 	DWORD f_pos_data = 0;
-	
-	//printf("save_image_z80\n");
+	#ifdef DUMP_DEBUG
+		printf("save_image_z80\n");
+	#endif
 
 	memset(header_buf, 0, sizeof(header_buf));
 
@@ -1164,15 +1321,20 @@ bool save_image_z80(char *file_name){
 	}
 
 	file_descr = sd_open_file(&sd_file,file_name,FA_CREATE_ALWAYS|FA_WRITE);
-	////printf("sd_open_file=%d\n",file_descr);
+	#ifdef DUMP_DEBUG
+		printf("sd_open_file=%d\n",file_descr);
+	#endif
 	if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
 
 	bytesToWrite = 32 + header->AdditionalBlockLength;
-
-	//printf("Header Write %d\n",bytesToWrite);
+	#ifdef DUMP_DEBUG
+		printf("Header Write %d\n",bytesToWrite);
+	#endif
 
 	file_descr = sd_write_file(&sd_file,header_buf,bytesToWrite,&bytesWritten);
-	////printf("bytesToWrite=%d, bytesWritten=%d\n",bytesToWrite,bytesWritten);
+	#ifdef DUMP_DEBUG
+		printf("bytesToWrite=%d, bytesWritten=%d\n",bytesToWrite,bytesWritten);
+	#endif
 	if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
 	if (bytesWritten != bytesToWrite){sd_close_file(&sd_file);return false;}
 
@@ -1226,7 +1388,9 @@ bool save_image_z80(char *file_name){
 		f_pos_size = sd_file_pos(&sd_file);
 		bytesToWrite = 3;
 		file_descr = sd_write_file(&sd_file,buf,bytesToWrite,&bytesWritten);
-		//printf("bytesToWrite=%d, bytesWritten=%d\n",bytesToWrite,bytesWritten);
+		#ifdef DUMP_DEBUG
+			printf("bytesToWrite=%d, bytesWritten=%d\n",bytesToWrite,bytesWritten);
+		#endif
 		if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
 		if (bytesWritten != bytesToWrite){sd_close_file(&sd_file);return false;}		
 
@@ -1234,40 +1398,48 @@ bool save_image_z80(char *file_name){
 		uint16_t pageSize = ZX_RAM_PAGE_SIZE;
 		usedBytes=0;
 		do{
-			writeBytes = CompressPage(buffer, sd_buffer, sizeof(sd_buffer));
-			////printf("Compress: buffer[%08X]   sd_buffer[%08X]   sizeof[%04X]   usedBytes[%04X] \n",buffer,sd_buffer,sizeof(sd_buffer),usedBytes);
+			writeBytes = CompressPage(buffer, &sd_buffer[0], SD_BUFFER_SIZE);
+			#ifdef DUMP_DEBUG
+				printf("Compress: buffer[%08X]   sd_buffer[%08X]   sizeof[%04X]   usedBytes[%04X] \n",buffer,sd_buffer,SD_BUFFER_SIZE,usedBytes);
+			#endif
 
 			/*
-			//printf("-------------[buff_dump]-------------\n");
+			printf("-------------[buff_dump]-------------\n");
 			ptr=0;
 			do{
-				//printf("----[%04X]",ptr);
+				printf("----[%04X]",ptr);
 				for (uint8_t col=0;col<16;col++){
-					//printf("	 %02X",sd_buffer[ptr]);
+					printf("	 %02X",sd_buffer[ptr]);
 					ptr++;
 				}
-				//printf("\n");
-			} while(ptr<sizeof(sd_buffer));
-			//printf("-------------[buff_dump]-------------\n");
+				printf("\n");
+			} while(ptr<SD_BUFFER_SIZE);
+			printf("-------------[buff_dump]-------------\n");
 			*/
 			usedBytes+=writeBytes;
-			buffer+=sizeof(sd_buffer);
-			pageSize-=sizeof(sd_buffer);
+			buffer+=SD_BUFFER_SIZE;
+			pageSize-=SD_BUFFER_SIZE;
 			bytesToWrite = writeBytes;
-			file_descr = sd_write_file(&sd_file,sd_buffer,bytesToWrite,&bytesWritten);
-			////printf("bytesToWrite=%d, bytesWritten=%d\n",bytesToWrite,bytesWritten);
+			file_descr = sd_write_file(&sd_file,&sd_buffer[0],bytesToWrite,&bytesWritten);
+			#ifdef DUMP_DEBUG
+				printf("bytesToWrite=%d, bytesWritten=%d\n",bytesToWrite,bytesWritten);
+			#endif
 			if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
 			if (bytesWritten != bytesToWrite){sd_close_file(&sd_file);return false;}		
 		} while (pageSize > 0);	
 
 		f_pos_data = sd_file_pos(&sd_file);
 		block->Size =usedBytes;
-		//printf("Block Write Page[%d] Size[%04X]\n",block->PageNum,block->Size);
-		////printf("Block size: usedBytes[%04X]\n",usedBytes);
+		#ifdef DUMP_DEBUG
+			printf("Block Write Page[%d] Size[%04X]\n",block->PageNum,block->Size);
+			printf("Block size: usedBytes[%04X]\n",usedBytes);
+		#endif
 		sd_seek_file(&sd_file,f_pos_size);
 		bytesToWrite = 3;
 		file_descr = sd_write_file(&sd_file,buf,bytesToWrite,&bytesWritten);
-		////printf("bytesToWrite=%d, bytesWritten=%d\n",bytesToWrite,bytesWritten);
+		#ifdef DUMP_DEBUG
+			printf("bytesToWrite=%d, bytesWritten=%d\n",bytesToWrite,bytesWritten);
+		#endif
 		if (file_descr!=FR_OK){sd_close_file(&sd_file);return false;}
 		if (bytesWritten != bytesToWrite){sd_close_file(&sd_file);return false;}
 		sd_seek_file(&sd_file,f_pos_data);

@@ -9,6 +9,7 @@
 #include "string.h"
 #include "util_cfg.h"
 
+extern uint8_t sd_buffer[SD_BUFFER_SIZE];
 
 uint8_t cfg_boot_scr;
 uint8_t cfg_hud_enable;
@@ -756,16 +757,17 @@ bool config_write_defaults(){
 		//printf(" file write:%d %s\n",fd,default_config_file[ptr]);
 		if (fd!=FR_OK){
 			//printf("ERROR file close:%d %s\n",fd,activefilename);
-			sd_close_file(&sd_file);return false;
+			sd_flush_file(&sd_file);
+			sd_close_file(&sd_file);
+			return false;
 		}
-		sd_flush_file(&sd_file);
 		////printf("Next line\n");
 		ptr++;
 	}
 	////printf("file close\n");
-	
+	sd_flush_file(&sd_file);
 	sd_close_file(&sd_file);
 	printf("Config saved OK\n");
-	return true;	
+	return true;
 }
 

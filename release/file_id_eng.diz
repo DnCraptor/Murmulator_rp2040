@@ -1,0 +1,332 @@
+[05.04.2025]
+v0.96.19
+	The separate mapping of 2 joysticks is fully completed and tested.
+	The "8bit Kempston" option has been added to the joystick menu. 
+	It enables the mode of transferring all joystick buttons to emulation. 
+	To exit this mode, press the combination START+SELECT
+
+[03/28/2025]
+v0.96.18
+	Switching to build via CMake and PicoSDK
+
+[02/28/2025]
+v0.96.17
+	For mobile murmulator:
+		additional LCD settings in the settings file
+
+[01/28/2025]
+v0.96.16
+	The video output auto-detection algorithm has been changed.
+	
+[01/21/2025]
+v0.96.15
+	Edited [POKE] to the working state, and from the files.pok can also be used, 
+	The algorithm is as follows: you load the game and then either enter it in decimal from the [POKE] menu with your hands,
+	or select the desired items from the file and then you can play.
+	
+	Separate mapping of 2 joysticks and keyboard to all old mapping options.
+	Automatic detection of VGA/HDMI/TFT screen.
+	Pin and frequency selection for HardTS.
+	For mobile murmulator:
+		Automatic detection of battery monitoring - ADC/MAX17043
+		Volume control via SELECT+UP/DOWN
+		Screen brightness control via SELECT+LEFT/RIGHT
+		Lock input via SELECT+A, unlock via SELECT+B
+
+[21.06.2024]
+v0.96.14 
+	Various bugfixes.
+	Support for I2S PCM DACs.
+	
+[12.04.2024]
+v0.96.04
+	Redesigned the TFT driver into a common unified VGA/HDMI/TFT display driver.
+	I remind you of the pinout for connecting SPI TFT screens ST7789, ST7789V, ILI9341, ILI9341V, GC9A01
+		TFT_CS_PIN (6)
+		TFT_RST_PIN (8)
+		TFT_LED_PIN (9)
+		TFT_DC_PIN (10)
+		TFT_DATA_PIN (12)
+		TFT_CLK_PIN (13)
+	The following items have been added to the settings:
+		[LCD Rotate] - Rotate the image of the LCD screen
+		[LCD inversion] - Inversion of the LCD screen image
+		[LCD Pixel format] - The pixel format of the LCD screen
+	Correction of the on-screen keyboard.
+	Reading the headlines .tap and .trd is placed in a separate buffer and does not affect the download
+	
+	Switching joysticks via START+UP and START+DOWN
+	Quick save/load via joystick combinations:
+		START+LEFT - save
+		START+RIGHT - load
+	Quick on-screen keyboard call: START+A
+	Quick call to the file manager: START+B
+	Added a composite output driver using an external encoder on the CXA1645M chip.
+	A software composite output driver has been added.
+	Improved keyboard handling.
+	Added a button to close the current image.tap - F9.	
+	
+[05.02.2024]
+v0.95
+	The HDMI driver from Alex Ekb (@Alex_Eburg) has been added. Now the assembly is performed in 4 versions: VGA, HDMI, TFT_ILI9341, TFT_ST7789v
+	Changing the mapping of buttons:
+		[F11] - Turning on/off the HUD
+		[F12]/[PrnScreen] - Quick menu call (joystick menu)
+	Control change:
+		The joystick is additionally plugged into Cursor Joy at the same time as Kempston Joy, while as an experiment, we will disable it.
+		For the Wii joystick, auto-firing on X and Y has been added, when working in mouse mode, the left stick works as a scroll wheel.
+	File Manager:
+		Added file deletion.
+			To delete, mark the required files or folders by placing the cursor on the required file and pressing the "Space" or "Insert" key, the file names will change their color to yellow.
+			To start the file deletion procedure, press the key combination "Shift+Delete", after which a dialog box will appear confirming this action.
+
+	[New category: Plans]
+		1. Processing .pok files and manual input of Poke (immortality in games).
+		2. Universal button mapping (joystick->buttons,buttons->buttons).
+		3. Joystick mode indication.
+		4. Support Ch9350 (USB->UART) converter on PS/2 keyboard port.
+		5. Support.tzx files, and suddenly it will work ;)
+		6. Support for .scl files, and suddenly it will work ;)
+		7. PS/2 mouse on the joystick port.
+		8. A real i2c disk drive on the joystick port.
+		9. Memory expansion due to SPI PSRAM.
+	This list is compiled from memory and the sequence of development may differ from the above.
+
+[19.01.2024]
+v0.94
+	Reconfigured SoftTS (recalibration of dividers).
+	Added a selection of 5 envelope modes in SoftTS.
+	File output has been fixed to mode 8.3.
+	The file column has been reduced by 8 points and, accordingly, the preview screen has been increased by 8 points.
+	The output of the boot sound to the output of the HardTS beeper has been added and debugged.
+	The joystick menu has been restructured: a playback control point has been added.tap files.
+	The option to reboot into firmware update mode has been added to the settings.
+
+	Hotkey changes:
+	[*Emulation*]
+	[Ctrl+F11]/[PrnScreen] - Quick menu call
+	[NumPad /]/[Alt+Del] - Switching the envelope set in STS
+	[*File Manager*]
+	[PrnScreen]   - Switching the splash screen/content view is relevant for .tap
+	
+	
+[16.01.2024]
+v0.93
+	The "poke" method revealed a memory leak.
+
+[01/15/2024]
+v0.92
+	Removed the output of the boot sound from an external source to the output of the HardTS beeper.
+	The patch of the video driver.
+
+[15.01.2024]
+v0.91
+	Changed keyboard handling.
+	The optimization of the resources used has been carried out.
+	Added audio output of downloads from an external source and files.tap into the output of the HardTS beeper.
+
+[01/12/2024]
+v0.90
+	Added volume control lock in inappropriate modes.
+	[NumPad +]/[Alt+PgUp] - Turn up the volume of the emulation.
+	[NumPad -]/[Alt+PgDn] - Turn down the volume of the emulation.
+	[NumPad *]/[Alt+End] - Enable/disable Mute mode.
+	[dev] HUD rendering has been changed.
+
+[11.01.2024]
+v0.89
+	Volume control added.
+	
+[11.01.2024]
+v0.88
+    The TFT drivers have been debugged.
+	The TFT pinout has been changed to eliminate a conflict between signal pins, the screen can be connected in parallel to VGA.
+	The minimum brightness for the LCD has been adjusted.
+	New pinout for connecting screens TFT_ILI9341 and TFT_ST7789v
+	TFT_CS_PIN (6) 
+	TFT_RST_PIN (8)
+	TFT_DC_PIN (10)
+	TFT_DATA_PIN (12)
+	TFT_CLK_PIN (13)
+	TFT_LED_PIN (9)
+
+[01/10/2024]
+v0.87
+	The on-screen keyboard has been put into working order, allowing you to control the emulator from the joystick.
+
+[06.01.2024]
+v0.86
+    The assembly was redesigned and tested for the TFT_ILI9341 and TFT_ST7789v screens
+	Added backlight brightness control in the settings menu, control pin for switching on LED_TFT_PIN (8)
+
+[01.01.2024]
+v0.84 - v0.85
+	Bugfixes
+
+[01.01.2024]
+v0.83
+    Bugfixes
+	To All Happy New Year!!!
+
+[31.12.2023]
+v0.82
+	The start screen selection option has been added to the settings:
+	Boot go to :[LOGO ] - show the screensaver after startup,
+	Boot go to :[FILE MANAGER] - show the file manager after startup,
+	Boot go to :[EMULATION ] - switch to emulation after startup;
+	Some optimizations have been made.
+	The help has been expanded and supplemented.
+	Happy New Year to all!!!
+
+[12/23/2023]
+v0.81
+ATTENTION!!!!!
+	After startup, reset to the default settings and then re-select and save the new settings.
+	The stability of the application has been improved.
+	Added HUD on and off (Display of occupied drives, display of save slots, information on downloading TAP files.) by pressing F12 and from the settings menu.
+	The display of occupied drives has been moved to the upper-left corner of the screen.
+	By default, an external joystick always works before downloading programs, then selected in the settings.
+	After the launch, you need to wait 20 seconds before the Easter egg starts.
+	Happy New Year to all!!!
+
+[06.12.2023]
+v0.74
+	Bugfixes:
+fixed joystick polling
+		fixed a bug with the menu 
+
+[03.12.2023]
+v0.73
+	Bugfix: fixed the polling speed of the joystick
+	Attention!!!!!
+The pins of the external TFT display have been changed
+	TFT_CLK_PIN (10)//earlier (17)
+TFT_DATA_PIN (11)//earlier (18)
+TFT_RST_PIN (6)//earlier (19)
+TFT_DC_PIN (13)//earlier (20)
+
+For TFT_ST7789v
+		TFT_CS_PIN (7)//previously (21)
+
+
+[30.11.2023]
+v0.72
+	Added support for 4 disk drives, you can use 4 TRD images at the same time. 
+	Fixed and debugged an error when displaying TRD content.
+	The keyboard driver has been switched to interrupts instead of PIO.
+
+[03.10.2023]
+v0.63
+	Wii joystick support.
+	Kempston Mouse Support - Right Stick Wii Pro Controller + L/ZL,R/ZR as mouse buttons
+	Restart with reset by Ctrl+Alt+BackSpace
+
+[09/02/2023]
+v0.51
+Fixed and debugged the TS chip selection error.
+
+[08/28/2023]
+v0.50
+Added setting of the TS chip selection order.
+	To work correctly, you need to reset the settings to the basic ones via the DEFAULT option in the settings menu.
+
+[07/20/2023]
+v0.49
+Added VGA refresh rate setting: 60/75/85 Hertz.
+	To work correctly, you need to set up the settings and restart the controller.
+	[Attention!!!] Previous settings may be lost, reconfigure the emulator again.
+	Bugfix Increased the number of directories to 30 and the number of files in a folder to 600.
+Fixed the display of hidden folders.
+
+[07/16/2023]
+v0.48
+Bugfixes:
+		Returned 21 HardTS pins to their place
+		Fixed a bug with exiting tinctures
+		Fixed a bug in the file system, now files with the Read Only flag are also displayed and read normally.
+
+[07/06/2023]
+v0.47
+Added Turbo ROM for 48K car
+	Added the NMI button (Ctrl+Alt+Ins) to call the Turbo ROM debugger
+	Debugger Commands:
+	1 — switches the number system 16/10;
+	2 — Switches the digital/character representation;
+	3 — requests a number and enters it into the current register;
+	4 — request a number and enter it into the current memory grid;
+	CS+5 — 64 addresses back;
+	CS+6 — 1 address back;
+	CS+7 — 1 address ahead;
+	CS+8 — 64 addresses ahead;
+	CS+9 — go to the previous register;
+	CS+0 — move to the next register;
+	SS+7 — requesting a number and calling a subroutine at the entered address;
+	SS+0 — if the command line is empty, then exit the monitor in Basic;
+	SPACE — sets the cell according to the entered number
+
+[30.06.2023]
+v0.46
+Added output of TRD file contents.
+
+[24.06.2023]
+v0.45
+	Bugfix: Reading the settings selected SoftTS by default, now everything is fine
+
+[06/23/2023]
+v0.45
+Added support for Soundrive.
+	
+[11.06.2023]
+v0.44
+	Bugfixes: SoftTS - added volume in 3/4
+Corrected the INT call - stopped slowing down the demo
+	Corrected the display of settings
+	The work of SoftAY and SoftTS has been corrected
+
+[09.06.2023]
+v0.44
+	Bugfixes: SoftTS - went with overload - turned up the volume to 2/3
+	Renamed the settings item "Beeper+TS" to "HW TurboSound"
+	Adjusted the buttons for flipping through the settings
+	The LED on pin 25 is now the TR-DOS activity indicator
+	
+
+[09.06.2023]
+v0.44
+	TurboSound: Redesigned output to 595 shifters (Sa Gin (@sa gin))
+				The procedures for hot switching have been completed.
+				1.75 megahertz frequency generation has been added on pins 21 and 29
+	An emulator settings call has been added to the joystick menu.
+	Completion is disabled due to lack of resources:(A TFT screen driver has been added to the main branch.)
+
+[05/19/2023]
+v0.43
+Connecting the LCD Screen to the murmulator
+	(3.2 inches, can be ordered here: https://www.aliexpress.com/item/33015586094.html)
+	(LCD)	->		(PICO)
+	SCK				17 (TFT_CLK_PIN)
+	SDI(MOSI)		18 (TFT_DATA_PIN)
+	RESET			19 (TFT_RST_PIN)
+	DC				20 (TFT_DC_PIN)
+	CS				21 (TFT_CS_PIN)
+	VCC				VOut (+5v)
+	GND				GND
+	LED 3v3 (can be connected for a short time, for constant use it is necessary to select a resistor)
+
+[15.05.2023]
+v0.42JT
+	SoftTurboSound: fixed errors in tone shaping (Sa Gin (@sa gin))
+
+[09.05.2023]
+v0.42JT
+	SoftTurboSound: fixed errors in envelope shaping (Sa Gin (@sa gin))
+
+[05.05.2023]
+v0.42JT
+	Added SoftTurboSound
+	To save memory, the display of files in folders has been reduced to 500
+[dev] The settings are set
+
+[13.04.2023]
+v0.40JT
+	Added a setting for resetting the spectrum by reloading images

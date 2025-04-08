@@ -79,7 +79,7 @@
 
 //#define ZX_RAM_PAGE_SIZE 0x4000
 
-extern uint8_t RAM[ZX_RAM_PAGE_SIZE*8]; //Реальная память куском 128Кб
+extern uint8_t RAM[ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES]; //Реальная память куском 128Кб
 extern z80 cpu;
 extern uint8_t zx_RAM_bank_active;
 extern uint8_t* zx_cpu_ram[4];//Адреса 4х областей памяти CPU при использовании страниц

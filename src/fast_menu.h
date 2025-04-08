@@ -12,7 +12,7 @@
 #define TRD_SUBMENU_LINES 8
 
 #define FAST_MENU_COUNT 5
-#define FAST_MENU_LINES 13
+#define FAST_MENU_LINES 14
 
 
 #define FAST_MAIN_MANAGER		(0)
@@ -22,15 +22,15 @@
 #define FAST_MAIN_TAPE			(4)
 #define FAST_MAIN_POKE			(5)
 #define FAST_MAIN_HELP			(6)
-#define FAST_MAIN_SETTINGS		(7)
-#define FAST_MAIN_SOFT_RESET	(8)
-#define FAST_MAIN_HARD_RESET	(9)
+#define FAST_MAIN_LOCKJOY		(7)
+#define FAST_MAIN_SETTINGS		(8)
+#define FAST_MAIN_SOFT_RESET	(9)
+#define FAST_MAIN_HARD_RESET	(10)
 
 
-const uint8_t __in_flash() *fast_menu_lines[FAST_MENU_COUNT]={(uint8_t*)10,(uint8_t*)11,(uint8_t*)11,(uint8_t*)6,(uint8_t*)9};
+const uint8_t __in_flash() *fast_menu_lines[FAST_MENU_COUNT]={(uint8_t*)11,(uint8_t*)11,(uint8_t*)11,(uint8_t*)6,(uint8_t*)9};
 const char __in_flash() *fast_menu[FAST_MENU_COUNT][FAST_MENU_LINES]={
 	{ 
-		
 		" [FILE BROWSER] ",
 		"   [KEYBOARD]   ",
 		"     [SAVE]     ",
@@ -38,6 +38,7 @@ const char __in_flash() *fast_menu[FAST_MENU_COUNT][FAST_MENU_LINES]={
 		"     [TAPE]     ",
 		"     [POKE]     ",
 		"     [HELP]     ",
+		"8bit Kempston[%s]",
 		"   [SETTINGS]   ",
 		"   Soft reset   ",
 		"   Hard reset   ",

@@ -2,7 +2,7 @@
 
 #include "inttypes.h"
 
-#define HELP_LINES 214
+#define HELP_LINES 217
 #define SCREEN_HELP_LINES 30
 #define SCREEN_HELP_LINE_WIDTH 60
 
@@ -82,6 +82,9 @@ const char* __in_flash() help_text[2][HELP_LINES]={{
 "    [TAPE]      - Вызов меню управления виртуальной лентой ",
 "    [POKE]      - Вызов меню ввода чит кодов               ",
 "    [HELP]      - Вызов текста помощи                      ",
+" 8bit Kempston[]- Включает режим передачи всех кнопок      ",
+"                  джойстика в эмуляцию.                    ",
+"                  Выход из режима START+SELECT             ",
 "  [SETTINGS]    - Вызов меню настроек эмуляции             ",
 "  Soft reset    - Перезапуск эмуляции                      ",
 "  Hard reset    - Перезагрузка системы                     ",
@@ -297,6 +300,9 @@ const char* __in_flash() help_text[2][HELP_LINES]={{
 "  [TAPE] - Open the virtual tape management menu           ",
 "  [POKE] - Cheat code entry menu                           ",
 "  [HELP] - Help                                            ",
+" 8bit Kempston[]-Enables translation of all joystick       ",
+"                  button to the emulation.                 ",
+"                  Exit the mode by START+SELECT            ",
 "  [SETTINGS] - Emulation settings menu                     ",
 "  Soft reset - Restarting the emulation                    ",
 "  Hard reset - Restarting the system                       ",

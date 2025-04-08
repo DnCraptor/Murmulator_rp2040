@@ -4,12 +4,12 @@
 #include <pico/stdlib.h>
 #include "util_sd.h"
 
-#define TAPE_OFF			(0)
-#define TAPE_INTERNAL_MANU	(1<<1)
-#define TAPE_INTERNAL_AUTO	(1<<2)
-#define TAPE_INTERNAL_ROM	(1<<3)
-#define TAPE_ROM_READY		(1<<4)
-#define TAPE_EXTERNAL		(1<<5)
+#define TAPE_OFF			(0x00)
+#define TAPE_INTERNAL_MANU	(0x02) //(1<<1)
+#define TAPE_INTERNAL_AUTO	(0x04) //(1<<2)
+#define TAPE_INTERNAL_ROM	(0x08) //(1<<3)
+#define TAPE_ROM_READY		(0x10) //(1<<4)
+#define TAPE_EXTERNAL		(0x20) //(1<<5)
 
 
 #define TAPE_FILE_FREE 0xFF

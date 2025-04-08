@@ -15,7 +15,7 @@
 
 #define MAX_BTN (2)
 
-extern uint8_t RAM[ZX_RAM_PAGE_SIZE*8]; //Реальная память куском 128Кб
+extern uint8_t RAM[ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES];//Реальная память куском 128Кб
 extern z80 cpu;
 extern uint8_t zx_RAM_bank_active;
 extern uint8_t* zx_cpu_ram[4];//Адреса 4х областей памяти CPU при использовании страниц
@@ -31,7 +31,7 @@ extern uint8_t zx_machine_get_7ffd_lastOut();
 
 extern short int last_error;
 #ifndef DEBUG_DISABLE_LOADERS
-//extern uint8_t temp_buffer_x[TEMP_BUFF_SIZE_X];
+extern uint8_t temp_buffer_x[TEMP_BUFF_SIZE_X];
 extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
 #endif
 
@@ -240,14 +240,14 @@ uint8_t PokeValueDialogBox(char *header,char *message,char *value,uint8_t colorF
 
 short int load_pok_captions(char *file_name){
 #ifndef DEBUG_DISABLE_LOADERS
-	//memset(temp_buffer_y, 0, TEMP_BUFF_SIZE_X);
+	memset(temp_buffer_x, 0, TEMP_BUFF_SIZE_X);
 	memset(temp_buffer_y, 0, TEMP_BUFF_SIZE_Y);
 	size_t bytesRead=0;
 	size_t filePos=0;
 	size_t buffpos=0;
 	size_t bufflen=TEMP_BUFF_SIZE_Y;
-	POKE_LINE* pokes = (POKE_LINE*)&temp_buffer_y[0];
-	pokes_buff = (POKE_LINE*)&temp_buffer_y[0];
+	POKE_LINE* pokes = (POKE_LINE*)&temp_buffer_x[0];
+	pokes_buff = (POKE_LINE*)&temp_buffer_x[0];
 	uint8_t* chr = &temp_buffer_y[0];
 	uint8_t* begin=NULL;
 	uint8_t* end=NULL;
@@ -276,7 +276,7 @@ short int load_pok_captions(char *file_name){
 				if((size>0)&&(size<=sizeof(pokes->text))){
 					memcpy(&pokes->text[0],begin+1,size-1);
 					printf(">>>%s\n",pokes->text);
-					if(pokes<(pokes+TEMP_BUFF_SIZE_Y)){
+					if(pokes<(pokes+TEMP_BUFF_SIZE_X)){
 						pokes++;
 						poke_count++;
 					} else {

@@ -13,6 +13,9 @@
 #include "turbo48.h" // Turbo48
 #include "pentagon.h" //with TRDOS menu 
 #include "48turbo.h" // Turbo48/2
+#include "2006.h" // Turbo48/2
+#include "gluk_rom.h" // Turbo48/2
+
 
 #include "z80.h"
 #include "../globals.h"
@@ -75,13 +78,13 @@ zx_vbuf_t zx_vbuf[ZX_NUM_GBUF];
 zx_vbuf_t* zx_vbuf_active;
 
 //выделение памяти может быть изменено в зависимости от платформы
-uint8_t RAM[16384*8]; //Реальная память куском 128Кб
+uint8_t RAM[ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES]; //Реальная память куском 128Кб
 
+uint8_t zx_7ffd_lastOut=0;
 
 uint32_t __not_in_flash_func(get_ticks)(){
     return (uint32_t)(0xffffff-((uint32_t)systick_hw->cvr))&0xffffff;
 }
-
 
 uint8_t FAST_FUNC(zx_keyboardDecode)(uint8_t addrH){
 	
@@ -111,27 +114,25 @@ uint8_t FAST_FUNC(zx_keyboardDecode)(uint8_t addrH){
 	return ~dataOut;//инверсия, т.к. для спектрума нажатая клавиша = 0;
 };
 
-
 //функции чтения памяти и ввода-вывода
 static uint8_t FAST_FUNC(read_z80)(void* userdata, uint16_t addr)
 {
-	if (addr<16384) return zx_cpu_ram[0][addr];
-	if (addr<32768) return zx_cpu_ram[1][addr-16384];
-	if (addr<49152) return zx_cpu_ram[2][addr-32768];
-	return zx_cpu_ram[3][addr-49152];
+	if (addr<ZX_RAM_PAGE_SIZE) return zx_cpu_ram[0][addr];
+	if (addr<32768) return zx_cpu_ram[1][addr-ZX_RAM_PAGE_SIZE];
+	if (addr<49152) return zx_cpu_ram[2][addr-(ZX_RAM_PAGE_SIZE*2)];
+	return zx_cpu_ram[3][addr-(ZX_RAM_PAGE_SIZE*3)];
 }
 
 static void FAST_FUNC(write_z80)(void* userdata, uint16_t addr, uint8_t val){
-	if (addr<16384) return;//запрещаем писать в ПЗУ
-	if (addr<32768) {zx_cpu_ram[1][addr-16384]=val;return;};
-	if (addr<49152) {zx_cpu_ram[2][addr-32768]=val;return;};
-	zx_cpu_ram[3][addr-49152]=val;
+	if (addr<ZX_RAM_PAGE_SIZE) return;//запрещаем писать в ПЗУ
+	if (addr<32768) {zx_cpu_ram[1][addr-ZX_RAM_PAGE_SIZE]=val;return;};
+	if (addr<49152) {zx_cpu_ram[2][addr-(ZX_RAM_PAGE_SIZE*2)]=val;return;};
+	zx_cpu_ram[3][addr-(ZX_RAM_PAGE_SIZE*3)]=val;
 }
 
 unsigned long prev_ticks, cur_ticks;
 
 static uint8_t FAST_FUNC(in_z80)(z80* const z, uint8_t port) {
-	
 	uint8_t portH=z->_hi_addr_port;
 	uint8_t portL=port;
 	uint16_t port16=(portH<<8)|portL;
@@ -190,14 +191,14 @@ static uint8_t FAST_FUNC(in_z80)(z80* const z, uint8_t port) {
 		if (port16==0x021F){
 			//printf("Read joy 0x021F: %02X\n",zx_read_buffer->kempston);
 			return zx_read_buffer->kempston & 0b00011111;
+			//return zx_read_buffer->kempston & 0b11111111;
 		} else
 		if ((port16&0x001F)==0x001F){
 			//printf("Read joy 0x001F: %02X\n",zx_read_buffer->kempston);
-			return zx_read_buffer->kempston & 0b01111111;
+			//return zx_read_buffer->kempston & 0b01111111;
+			return zx_read_buffer->kempston & 0b11111111;
 		}
 	} else {
-		//загрузка с магнитофона и опрос клавиатуры
-		ack_input=true;
 		//if (port16!=0x7FFE) printf(": %X ", port16);
 		/*
 			if ((port)==0xFE)
@@ -207,35 +208,37 @@ static uint8_t FAST_FUNC(in_z80)(z80* const z, uint8_t port) {
 			prev_ticks=cur_ticks;
 			}
 		*/
-		if (hw_zx_get_bit_LOAD()){
-			uint8_t out_data=zx_keyboardDecode(portH);
-			out_data&=0b10111111;
-			return(out_data|=1<<6);
-		}
-
+		//загрузка с магнитофона и опрос клавиатуры
+		ack_input=true;
 		uint8_t out_data=zx_keyboardDecode(portH);
-		return(out_data&0b10111111);
-
-
+		out_data&=0b10111111;
+		if(hw_zx_get_bit_LOAD()){
+			out_data|=1<<6;
+		}
+		return(out_data);
 	}
 	return 0xFF;
 }
 
-uint8_t zx_7ffd_lastOut=0;
 void zx_machine_set_7ffd_out(uint8_t val){
 	zx_RAM_bank_active=(val&0x7);
-	//			printf("7FFD Page&data :%02X\n",val);
+	printf("7FFD Page&data :%02X Bank:%02X\n",val,zx_RAM_bank_active);
 	
 	//			zx_cpu_ram[3]=zx_ram_bank[val&0x7];
 	zx_cpu_ram[3]=zx_ram_bank[zx_RAM_bank_active];
 	
 	if (val&8) zx_video_ram=zx_ram_bank[7];else zx_video_ram=zx_ram_bank[5];
-	if (val&16) zx_cpu_ram[0]=zx_rom_bank[0]; else  zx_cpu_ram[0]=zx_rom_bank[1]; //5bit = {1 - 48k[R0], 0 - 128k[R1]}
+	//if (val&8) zx_video_ram=zx_ram_bank[6];else zx_video_ram=zx_ram_bank[4];
+	if (val&16){
+		zx_cpu_ram[0]=zx_rom_bank[0]; 
+	} else {
+		zx_cpu_ram[0]=zx_rom_bank[1]; //5bit = {1 - 48k[R0], 0 - 128k[R1]}
+	}
 	if (val&32) zx_state_48k_MODE_BLOCK=true; // 6bit = 1 48k mode block
 	
 };
-uint8_t zx_machine_get_7ffd_lastOut(){return zx_7ffd_lastOut;}
 
+uint8_t zx_machine_get_7ffd_lastOut(){return zx_7ffd_lastOut;}
 
 static void FAST_FUNC(out_z80)(z80* const z, uint8_t port, uint8_t val) {
 	uint8_t portH=z->_hi_addr_port;
@@ -327,13 +330,19 @@ static void FAST_FUNC(out_z80)(z80* const z, uint8_t port, uint8_t val) {
 			
 			//переключение банка памяти
 			zx_RAM_bank_active=(val&0x7);
-			//			printf("7FFD Page&data :%02X\n",val);
+			//printf("7FFD Page&data :%02X\n",val);
 			
 			//			zx_cpu_ram[3]=zx_ram_bank[val&0x7];
 			zx_cpu_ram[3]=zx_ram_bank[zx_RAM_bank_active];
 			
 			if (val&8) zx_video_ram=zx_ram_bank[7];else zx_video_ram=zx_ram_bank[5];
-			if (val&16) zx_cpu_ram[0]=zx_rom_bank[0]; else  zx_cpu_ram[0]=zx_rom_bank[1]; //5bit = {1 - 48k[R0], 0 - 128k[R1]}
+			//if (val&8) zx_video_ram=zx_ram_bank[6];else zx_video_ram=zx_ram_bank[4];
+			if (val&16) {
+				//memcpy();
+				zx_cpu_ram[0]=zx_rom_bank[0];
+			} else {
+				zx_cpu_ram[0]=zx_rom_bank[1]; //5bit = {1 - 48k[R0], 0 - 128k[R1]}
+			};
 			if (val&32) zx_state_48k_MODE_BLOCK=true; // 6bit = 1 48k mode block
 			return;
 			//
@@ -357,33 +366,65 @@ static void FAST_FUNC(out_z80)(z80* const z, uint8_t port, uint8_t val) {
 
 
 //
-//uint8_t ROM_BUF[2][16384];
+//uint8_t ROM_BUF[2][ZX_RAM_PAGE_SIZE];
+
 void zx_machine_init(){
 	zx_read_buffer = &zx_input_emu[0];
 	zx_write_buffer = &zx_input_emu[1];
 	//привязка реальной RAM памяти к банкам
-	for(int i=0;i<8;i++){
-		zx_ram_bank[i]=&RAM[i*16384];
+	memset(&RAM[0],0x00,ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES);
+	for(int i=0;i<ZX_RAM_PAGES;i++){ //uint8_t RAM[ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES]
+		zx_ram_bank[i]=&RAM[i*ZX_RAM_PAGE_SIZE];
 	}
+	
+	
+	//zx_ram_bank[0]=&RAM[0];
+	//memset(zx_ram_bank[0],0xFF,ZX_RAM_PAGE_SIZE);
+
+	/*
+	memset(zx_ram_bank[0],0,ZX_RAM_PAGE_SIZE);
+	zx_ram_bank[1]=&RAM[0*ZX_RAM_PAGE_SIZE];
+	zx_ram_bank[2]=&RAM[1*ZX_RAM_PAGE_SIZE];
+	zx_ram_bank[3]=&RAM[2*ZX_RAM_PAGE_SIZE];
+	zx_ram_bank[4]=&RAM[3*ZX_RAM_PAGE_SIZE];
+	zx_ram_bank[5]=&RAM[4*ZX_RAM_PAGE_SIZE];
+	zx_ram_bank[6]=&RAM[5*ZX_RAM_PAGE_SIZE];
+	zx_ram_bank[7]=&RAM[6*ZX_RAM_PAGE_SIZE];	
+	*/
 	//	привязка ROM памяти
 	
-	//zx_rom_bank[0]=&ROM[3*16384];//48k
-	//zx_rom_bank[1]=&ROM[2*16384];//128k
+	//zx_rom_bank[0]=&ROM[3*ZX_RAM_PAGE_SIZE];//48k
+	//zx_rom_bank[1]=&ROM[2*ZX_RAM_PAGE_SIZE];//128k
+	
+	/*main rom config*/
+	zx_rom_bank[0]=&ROM_PENTAGON[1*ZX_RAM_PAGE_SIZE];//48k		   //&turbo48_rom;//48k
+	zx_rom_bank[1]=&ROM_PENTAGON[0*ZX_RAM_PAGE_SIZE];//128k с пунктом меню "TR-DOS"
+	zx_rom_bank[2]=&ROM[1*ZX_RAM_PAGE_SIZE];//TRDOS
+	zx_rom_bank[3]=&ROM[0*ZX_RAM_PAGE_SIZE];//GLUK
+
+	/*main rom config*/
+	/*experimental rom config*/
 	/*
-	zx_rom_bank[0]=&ROM_PENTAGON[1*16384];//48k
-	zx_rom_bank[1]=&ROM_PENTAGON[0*16384];//128k с пунктом меню "TR-DOS"
-	zx_rom_bank[2]=&ROM[1*16384];//TRDOS
-	zx_rom_bank[3]=&ROM[0*16384];//GLUK
+	zx_rom_bank[0]=&z2006_ROM[0];//base rom
+	zx_rom_bank[1]=&GLUKPEN_ROM[0];//TR-DOS
+	zx_rom_bank[2]=&GLUKPEN_ROM[0];//TR-DOS
+	zx_rom_bank[3]=&ROM_PENTAGON[0*ZX_RAM_PAGE_SIZE];//128k с пунктом меню "TR-DOS"
 	*/
-	zx_rom_bank[0]=&ROM_PENTAGON[1*16384];//48k		   //&turbo48_rom;//48k
-	zx_rom_bank[1]=&ROM_PENTAGON[0*16384];//128k с пунктом меню "TR-DOS"
-	zx_rom_bank[2]=&ROM[1*16384];//TRDOS
-	zx_rom_bank[3]=&ROM[0*16384];//GLUK
+	/*experimental rom config*/
 
+	
+	/*experimental rom config/
+	zx_rom_bank[0]=&ROM[0*ZX_RAM_PAGE_SIZE];//48k &ROM[1*ZX_RAM_PAGE_SIZE];//GLUK
+	zx_rom_bank[1]=&GLUKPEN_ROM[0];//TRDOS
+	zx_rom_bank[2]=NULL;
+	zx_rom_bank[3]=NULL;
+	/*experimental rom config*/
+
+	
 
 	/*
-	// memcpy(ROM_BUF[0],&ROM[3*16384],16384);
-	// memcpy(ROM_BUF[1],&ROM[2*16384],16384);
+	// memcpy(ROM_BUF[0],&ROM[3*ZX_RAM_PAGE_SIZE],ZX_RAM_PAGE_SIZE);
+	// memcpy(ROM_BUF[1],&ROM[2*ZX_RAM_PAGE_SIZE],ZX_RAM_PAGE_SIZE);
 	// zx_rom_bank[0]=ROM_BUF[0];
 	// zx_rom_bank[1]=ROM_BUF[1];
 	//zx_rom_bank[0]=fuse_roms_turbo48_rom;  //48k turbo  
@@ -392,6 +433,7 @@ void zx_machine_init(){
 	*/
 	
 	zx_cpu_ram[0]=zx_rom_bank[1]; // 0x0000 - 0x3FFF
+	//zx_cpu_ram[0]=zx_rom_bank[0]; // 0x0000 - 0x3FFF
 
 	//zx_cpu_ram[0]=zx_rom_bank[3]; // 0x0000 - 0x3FFF //Autoboot TRD
 
@@ -399,6 +441,7 @@ void zx_machine_init(){
 	zx_cpu_ram[2]=zx_ram_bank[2]; // 0x8000 - 0xBFFF
 	zx_cpu_ram[3]=zx_ram_bank[3]; // 0xC000 - 0x7FFF
 	zx_video_ram=zx_ram_bank[5];
+	//zx_video_ram=zx_ram_bank[4];
 	zx_RAM_bank_active=3;
 	zx_state_48k_MODE_BLOCK=false;
 
@@ -424,20 +467,9 @@ void zx_machine_init(){
 	printf("zx machine initialized\n");
 };
 
-
-void FAST_FUNC(zx_machine_input_set)(){
-	ZX_Input_t* temp_buffer_ptr = zx_read_buffer;
-	zx_read_buffer = zx_write_buffer;
-	zx_write_buffer = temp_buffer_ptr;
-	memcpy(zx_write_buffer,zx_read_buffer,sizeof(ZX_Input_t));
-};
-
-void zx_machine_NMI(){
-	z80_gen_nmi_from_main=true;
-}
-
 void zx_machine_reset(bool trdos){
-	
+
+	memset(&RAM[0],0x00,ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES);
 	z80* z=&cpu;
 	// z->cyc = 0;
 
@@ -445,15 +477,22 @@ void zx_machine_reset(bool trdos){
 	TRDOS_disabled = false; // Запрет входить в TRDOS
 	tap_loader_active&=~TAPE_EXTERNAL;
 
+	//memcpy(&RAM[0], &ROM_PENTAGON[1*ZX_RAM_PAGE_SIZE],ZX_RAM_PAGE_SIZE);
+
+	//zx_cpu_ram[0]=zx_rom_bank[1]; // 0x0000 - 0x3FFF
+	
 	zx_cpu_ram[0]=zx_rom_bank[1]; // 0x0000 - 0x3FFF
 
 	//zx_cpu_ram[0]=zx_rom_bank[2]; // 0x0000 - 0x3FFF  //Autoboot TRD
 	//TRDOS_mode = true;
+	
 
 	zx_cpu_ram[1]=zx_ram_bank[5]; // 0x4000 - 0x7FFF
 	zx_cpu_ram[2]=zx_ram_bank[2]; // 0x8000 - 0xBFFF
 	zx_cpu_ram[3]=zx_ram_bank[3]; // 0xC000 - 0x7FFF
+	//zx_video_ram=zx_ram_bank[5];
 	zx_video_ram=zx_ram_bank[5];
+
 	zx_RAM_bank_active=3;
 	zx_state_48k_MODE_BLOCK=false;
 	
@@ -514,10 +553,24 @@ void zx_machine_reset(bool trdos){
 		TRDOS_mode = true;
 		zx_7ffd_lastOut|=16;
 		zx_cpu_ram[0]=zx_rom_bank[2]; // подмена ПЗУ на TRDOS
+		//zx_cpu_ram[0]=zx_rom_bank[2]; // подмена ПЗУ на TRDOS
 	}
 	#endif	
 
 };
+
+
+void FAST_FUNC(zx_machine_input_set)(){
+	ZX_Input_t* temp_buffer_ptr = zx_read_buffer;
+	zx_read_buffer = zx_write_buffer;
+	zx_write_buffer = temp_buffer_ptr;
+	memcpy(zx_write_buffer,zx_read_buffer,sizeof(ZX_Input_t));
+};
+
+void zx_machine_NMI(){
+	z80_gen_nmi_from_main=true;
+}
+
 
 uint8_t* FAST_FUNC(zx_machine_screen_get)(uint8_t* current_screen){
 	#if (ZX_NUM_GBUF==1)
@@ -814,6 +867,7 @@ void FAST_FUNC(zx_machine_main_loop_start)(){
 						#endif
 						TRDOS_mode=true;
 						zx_cpu_ram[0]=zx_rom_bank[2]; // подмена ПЗУ на TRDOS
+						//zx_cpu_ram[0]=zx_rom_bank[2]; // подмена ПЗУ на TRDOS
 					}
 				}
 				if ((cpu.pc > 0x3FFF) && (TRDOS_mode)){

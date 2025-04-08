@@ -35,14 +35,14 @@
 	#define TFT_LED_PIN		(13)
 #endif
 */
-
+/*
 #define TFT_CS_PIN		(6)
 #define TFT_RST_PIN		(8)
 #define TFT_LED_PIN		(9)
 #define TFT_DC_PIN		(10)
 #define TFT_DATA_PIN	(12)
 #define TFT_CLK_PIN		(13) 
-
+*/
 
 #define TFT_MIN_BRIGHTNESS 20
 

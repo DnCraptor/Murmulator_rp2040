@@ -23,12 +23,12 @@ uint8_t SaveStatus;
 extern volatile z80 cpu;
 extern bool im_z80_stop;
 extern bool im_ready_loading;
-extern uint8_t RAM[ZX_RAM_PAGE_SIZE*8]; //Реальная память куском 128Кб
+extern uint8_t RAM[ZX_RAM_PAGE_SIZE*ZX_RAM_PAGES]; //Реальная память куском 128Кб
 extern uint8_t sd_buffer[SD_BUFFER_SIZE];
 extern char temp_msg[60];
 extern uint8_t* zx_cpu_ram[4];
 #ifndef DEBUG_DISABLE_LOADERS
-extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
+	extern uint8_t temp_buffer_y[TEMP_BUFF_SIZE_Y];
 #endif
 
 #include "zx_emu/zx_machine.h"

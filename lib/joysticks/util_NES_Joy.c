@@ -14,7 +14,7 @@
 uint32_t d_joy_get_data(){
 	uint16_t data1=0;					// место сбора данных 1 джойстика
 	uint16_t data2=0;					// место сбора данных 2 джойстика
-	uint32_t result = 0;					
+	uint32_t result=0;					
 	gpio_put(D_JOY_LATCH_PIN,1);
 	//gpio_put(D_JOY_CLK_PIN,1);
 	busy_wait_us(40);//12//24
@@ -36,11 +36,16 @@ uint32_t d_joy_get_data(){
 		busy_wait_us(40);//10//20
 		// tight_loop_contents();
 	}
-	// data=(data&0x0f)|((data>>2)&0x30)|((data<<3)&0x80)|((data<<1)&0x40);
-	result = ((uint32_t)data2<<16)|data1;
-	//printf("NES>%08X\n",result);
-	result = result <<(16-QNT_IMP_NES);
-	return ~result;
+
+	if((data1>0)||(data2>0)){
+		if(data1>0) {result |= data1;} else {result |=((uint32_t)0xFFFF);}
+		if(data2>0){result |=((uint32_t)data2<<16);} else{result |=((uint32_t)0xFFFF<<16);}
+		//printf("NES>%08X\n",result);
+		result = result <<(16-QNT_IMP_NES);
+		result = ~result;
+		//printf("NES>%08X\n",result);
+	}
+	return result;
 };
 
 
@@ -54,10 +59,12 @@ void d_joy_init(){
 	gpio_init(D_JOY1_DATA_PIN);
 	gpio_set_dir(D_JOY1_DATA_PIN,GPIO_IN);
 	gpio_pull_down(D_JOY1_DATA_PIN);
+	//gpio_pull_up(D_JOY1_DATA_PIN);
 
 	gpio_init(D_JOY2_DATA_PIN);
 	gpio_set_dir(D_JOY2_DATA_PIN,GPIO_IN);
 	gpio_pull_down(D_JOY2_DATA_PIN);
+	//gpio_pull_up(D_JOY2_DATA_PIN);
 
 	gpio_put(D_JOY_LATCH_PIN,0);
 		
