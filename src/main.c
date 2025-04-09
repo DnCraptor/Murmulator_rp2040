@@ -4,7 +4,7 @@
 
 // #define PICO_FLASH_SIZE_BYTES (4 * 1024 * 1024)
 
-#define DEBUG_DELAY
+//#define DEBUG_DELAY
 
 //#define DEBUG_BLINK
 
@@ -2188,7 +2188,7 @@ int main(void){
 	}  
 	if(!init_fs){
 		cfg_sound_mode=3;
-		cfg_sound_out_mode=OUT_PCM;//DEF_CFG_OUT_MODE;
+		cfg_sound_out_mode=DEF_CFG_OUT_MODE;//OUT_PCM;
 		cfg_volume=DEF_CFG_VOLUME_MODE;
 		cfg_lcd_video_out=DEF_CFG_LCD_VIDEO_MODE;
 		cfg_brightness=DEF_CFG_BRIGHT_MODE;
@@ -2521,7 +2521,14 @@ int main(void){
 					//graphics_update_screen();
 					#endif
 					ticker++;
-					if ((ticker%8196)==0){
+					/*if ((ticker%2048)==0){
+						//i2s_out((int)4096,(int)4096);
+					}
+					if ((ticker%4096)==0){
+						//i2s_out((int)0,(int)0);
+					}*/
+
+					if ((ticker%8192)==0){
 						if(current_hud_mode&HM_SHOW_BATTERY){
 							monitor_battery_voltage();
 							battery_status = round(battery_power_percent/10);
@@ -2541,8 +2548,8 @@ int main(void){
 							sprintf(batt_text," %03d%%",battery_status);
 							if(batt_management_usb_power_detected()){batt_text[0]=0x18;};
 							*/
-							
 						}
+
 					}
 					/* HNY 2025
 					if(repeat==1){
@@ -2680,6 +2687,11 @@ int main(void){
 					busy_wait_ms(150); //WII joystick delay
 				}else*/
 				if(data_joy!=0){
+					i2s_out((int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)));
+					busy_wait_us(500);
+					i2s_out((int)(((int)(255)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(255)*4)*(cfg_volume/CFG_VOLUME_STEP)));
+					busy_wait_us(500);
+					i2s_out((int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)));
 					busy_wait_ms(150); //joystick delay
 				}						
 				
@@ -4520,6 +4532,13 @@ int main(void){
 										current_hud_mode|=HM_MAIN_HUD;
 									};
 									gpio_put(WORK_LED_PIN,1);
+									/*
+									i2s_out((int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)));
+									busy_wait_us(125);
+									i2s_out((int)(((int)(128)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(128)*4)*(cfg_volume/CFG_VOLUME_STEP)));
+									busy_wait_us(125);
+									i2s_out((int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)));
+									*/
 								}
 								if ((GetWD1793_Status()==2)&&(drives_status[dr]!=ICON_DISK_WRITE)){
 									drives_status[dr]=ICON_DISK_WRITE;
@@ -5033,7 +5052,7 @@ int main(void){
 						
 						//}
 						if(hat_locked>0){
-							if(((data_joy&D_JOY_MENU)==D_JOY_MENU)||(((data_joy>>16)&D_JOY_MENU)==D_JOY_MENU)){
+							if(((data_joy&D_JOY_HAT_UNLOCK)==D_JOY_HAT_UNLOCK)||(((data_joy>>16)&D_JOY_HAT_UNLOCK)==D_JOY_HAT_UNLOCK)){
 								hat_locked=0;
 								menu_ptr++;
 								menu_mode[menu_ptr]=MENU_JOY_MAIN;

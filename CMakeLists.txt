@@ -25,7 +25,7 @@ endif()
 # ====================================================================================
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards )
 
-set(PICO_BOARD "murmulator" CACHE STRING "Board type")
+set(PICO_BOARD murmulator CACHE STRING "Board type")
 set(PICO_PLATFORM "rp2040" CACHE STRING "Chip type")
 
 #set(PICO_BOARD murmulator2 CACHE STRING "Board type")
@@ -96,7 +96,7 @@ target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
 # Common options
 add_compile_options(-O2)
 add_definitions(-DPICO_STDIO_USB)
-
+#add_definitions(-DPICO_PLATFORM=rp2350)
 
 # Include directories
 #target_include_directories(murmulator PRIVATE src)
