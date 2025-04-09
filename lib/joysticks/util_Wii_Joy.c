@@ -28,10 +28,10 @@ const uint8_t set_lores_cmd[2]={0xFE,0x01};
 //const uint8_t init_data[] = { 0xF0, 0x55, 0xFB, 0x00, 0xFE, 0x03 };
 
 
-bool controller_decode_bytes_uncompressed(uint8_t *buf, size_t len, struct WIIController *tempData){ //mode 3
+uint8_t controller_decode_bytes_uncompressed(uint8_t *buf, size_t len, struct WIIController *tempData){ //mode 3
 
 	if ((buf == NULL) || (len < WII_BYTE_COUNT) || (tempData == NULL)) {
-		return false;
+		return 0xFF;
 	}
 
 	tempData->LeftX 		= (int)(buf[0]-WII_Calibrate[0]);// - LX_center
@@ -57,13 +57,13 @@ bool controller_decode_bytes_uncompressed(uint8_t *buf, size_t len, struct WIICo
 	tempData->ButtonB 		= (~(buf[7] >> 6) & 1);
 	tempData->ButtonZL 		= (~(buf[7] >> 7) & 1);
 	tempData->ButtonUp 		= (~buf[7] & 1);
-	return true;
+	return 0x01;
 }
 
-bool controller_decode_bytes_uncompressed_alt(uint8_t *buf, size_t len, struct WIIController *tempData){ //mode 2
+uint8_t controller_decode_bytes_uncompressed_alt(uint8_t *buf, size_t len, struct WIIController *tempData){ //mode 2
 
 	if ((buf == NULL) || (len < WII_BYTE_COUNT) || (tempData == NULL)) {
-		return false;
+		return 0xFF;
 	}
 
 	tempData->LeftX 		= (int)(buf[0]-WII_Calibrate[0]);// - LX_center
@@ -89,13 +89,13 @@ bool controller_decode_bytes_uncompressed_alt(uint8_t *buf, size_t len, struct W
 	tempData->ButtonB 		= (~(buf[8] >> 6) & 1);
 	tempData->ButtonZL 		= (~(buf[8] >> 7) & 1);
 	tempData->ButtonUp 		= (~buf[8] & 1);
-	return true;
+	return 0x01;
 }
 
-bool controller_decode_bytes_compressed(uint8_t *buf, size_t len, struct WIIController *tempData){ //mode 1
+uint8_t controller_decode_bytes_compressed(uint8_t *buf, size_t len, struct WIIController *tempData){ //mode 1
 
   if ((buf == NULL) || (len < WII_BYTE_COUNT) || (tempData == NULL)) {
-    return false;
+    return 0xFF;
   }
   
   tempData->LeftX = (buf[0] & (64 - 1)) - 32; // 0 to 63
@@ -122,12 +122,12 @@ bool controller_decode_bytes_compressed(uint8_t *buf, size_t len, struct WIICont
   tempData->ButtonR = ((buf[4] & (1 << 1)) == 0);
   tempData->ButtonZL = ((buf[5] & (1 << 7)) == 0);
   tempData->ButtonZR = ((buf[5] & (1 << 2)) == 0);
-  return true;
+  return 0x01;
 }
 
-bool controller_decode_bytes_nunchuck(uint8_t *buf, size_t len, struct WIIController *tempData){ // mode 0
+uint8_t controller_decode_bytes_nunchuck(uint8_t *buf, size_t len, struct WIIController *tempData){ // mode 0
 	if ((buf == NULL) || (len < WII_BYTE_COUNT) || (tempData == NULL)) {
-		return false;
+		return 0xFF;
 	}
 
 	tempData->LeftX 		= (int)(buf[0]);
@@ -140,7 +140,7 @@ bool controller_decode_bytes_nunchuck(uint8_t *buf, size_t len, struct WIIContro
 	tempData->ButtonA	 	= (~(buf[7] >> 1) & 1);
 	tempData->ButtonB 		= (~buf[7] & 1);
 
-	return true;
+	return 0x01;
 }
 
 bool Init_Wii_Joystick(){
@@ -238,23 +238,25 @@ void Deinit_Wii_Joystick(){
 	gpio_disable_pulls(WII_SCL_PIN);  	
 }
 
-bool Wii_decode_joy(){
+uint8_t Wii_decode_joy(){
     uint8_t result;
-    bool decode = false;
+    uint8_t decode = 0x00;
 	busy_wait_us(200);
 	i2c_write_blocking(WII_PORT, WII_ADDRESS, 0x00, 1, false);    
 	busy_wait_us(200);
 	result = i2c_read_blocking(WII_PORT, WII_ADDRESS, &WII_Data[0], WII_BYTE_COUNT, false);
 	//printf("read count>%d\n",result);
 	if(result>=WII_BYTE_COUNT){
-		if((WII_Data[0]==0x00)&&(WII_Data[1]==0x00)&&(WII_Data[2]==0x00)&&(WII_Data[3]==0x00)) return false;
-		if((WII_Data[0]==0xFF)&&(WII_Data[1]==0xFF)&&(WII_Data[2]==0xFF)&&(WII_Data[3]==0xFF)) return false;
-		if(memcmp(&WII_Data[0],&WII_Data_Old[0],WII_BYTE_COUNT)!=0){
-			/*printf("data>");
+		if((WII_Data[0]==0x00)&&(WII_Data[1]==0x00)&&(WII_Data[2]==0x00)&&(WII_Data[3]==0x00)) return 0xFF;
+		if((WII_Data[0]==0xFF)&&(WII_Data[1]==0xFF)&&(WII_Data[2]==0xFF)&&(WII_Data[3]==0xFF)) return 0xFF;
+		//if(memcmp(&WII_Data[0],&WII_Data_Old[0],WII_BYTE_COUNT)!=0){
+			/*
+			printf("data>");
 			for (uint8_t i = 0; i < 8; i++) {
 				printf(" %02X",WII_Data[i]);
 			}
-			printf("\n");*/
+			printf("\n");
+			*/
 	    	switch (WII_Data_Format) {
 				case 0:
 					decode = controller_decode_bytes_nunchuck(WII_Data, result, &Wii_joy_data);
@@ -269,14 +271,14 @@ bool Wii_decode_joy(){
 					decode = controller_decode_bytes_uncompressed(WII_Data, result, &Wii_joy_data);
 					break;
 				default:
-					return false;
+					return 0xFF;
     		}		
 			
-		} else return false;
-		memcpy(&WII_Data_Old[0],&WII_Data[0],WII_BYTE_COUNT);
+		//} else return false;
+		//memcpy(&WII_Data_Old[0],&WII_Data[0],WII_BYTE_COUNT);
 		return decode;
 	}
-	return false;
+	return 0x00;
 }
 
 void Wii_clear_old(){

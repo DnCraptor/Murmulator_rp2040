@@ -82,9 +82,11 @@ void data_joy_input(int Type_Joy){
                 /* code */
                 if(Joystics.Present_WII_joy) {
                     // Wii_clear_old();
-                    if(Wii_decode_joy()){
+                    if(Wii_decode_joy()==0x01){
                         //Wii_debug(&Wii_joy_data);
                         Joy_data.Data_WII_joy = map_to_nes(&Wii_joy_data);
+                    } else {
+                        Joy_data.Data_WII_joy = 0;    
                     }
                 } else {
                     Joy_data.Data_WII_joy = 0;

@@ -44,7 +44,7 @@ extern struct WIIController Wii_joy_data;
 
 bool Init_Wii_Joystick();
 void Deinit_Wii_Joystick();
-bool Wii_decode_joy();
+uint8_t Wii_decode_joy();
 void Wii_clear_old();
 void Wii_debug(struct WIIController *tempData);
 uint32_t map_to_nes(struct WIIController *tempData);

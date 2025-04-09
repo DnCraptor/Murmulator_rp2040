@@ -525,7 +525,7 @@ void process_input(){
 
 	data_joy = data_joy1|(data_ext_joy1<<8)|(data_joy2<<16)|(data_ext_joy2<<24);
 
-	//printf("[%08X]\tJ1[%02X]>[%02X]\tJ2[%02X]>[%02X]\tCJ[%08X]\n",temp_data_joy,data_joy1,data_ext_joy1,data_joy2,data_ext_joy2,data_joy);
+	//printf("JR[%08X]\tJ1[%02X]>[%02X]\tJ2[%02X]>[%02X]\tCJ[%08X]\n",temp_data_joy,data_joy1,data_ext_joy1,data_joy2,data_ext_joy2,data_joy);
 
 	if(Joystics.joy_pressed) {joy_pressed = true;} else{joy_pressed = false;}
 	if(Joystics.Present_WII_joy){map_kmouse(&Wii_joy_data,zx_write_buffer);}	
@@ -2188,7 +2188,7 @@ int main(void){
 	}  
 	if(!init_fs){
 		cfg_sound_mode=3;
-		cfg_sound_out_mode=DEF_CFG_OUT_MODE;//OUT_PCM;
+		cfg_sound_out_mode=OUT_PCM;//DEF_CFG_OUT_MODE;//OUT_PCM;
 		cfg_volume=DEF_CFG_VOLUME_MODE;
 		cfg_lcd_video_out=DEF_CFG_LCD_VIDEO_MODE;
 		cfg_brightness=DEF_CFG_BRIGHT_MODE;
@@ -2686,13 +2686,22 @@ int main(void){
 				/*if(((Joystics.Present_WII_joy)||(Joystics.Present_i2c_PCF_16_buttons))&&(data_joy!=0)){
 					busy_wait_ms(150); //WII joystick delay
 				}else*/
+				if ((KBD_PRESS)||(joy_pressed)){ //like a speccy keypress sound
+					hw_zx_set_beep_out(0x00);
+					busy_wait_us(3500);
+					hw_zx_set_beep_out(0x08);
+					busy_wait_us(3500);
+					hw_zx_set_beep_out(0x00);
+					/*
+					busy_wait_ms(3);
+					hw_zx_set_beep_out(0x08);
+					busy_wait_ms(3);
+					hw_zx_set_beep_out(0x00);
+					*/
+				}
+
 				if(data_joy!=0){
-					i2s_out((int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)));
-					busy_wait_us(500);
-					i2s_out((int)(((int)(255)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(255)*4)*(cfg_volume/CFG_VOLUME_STEP)));
-					busy_wait_us(500);
-					i2s_out((int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)));
-					busy_wait_ms(150); //joystick delay
+					busy_wait_ms(110); //joystick delay
 				}						
 				
 				//busy_wait_us(500);
@@ -4942,8 +4951,10 @@ int main(void){
 	
 							if(data_joy!=rel_data_joy){
 								memset(zx_write_buffer->kb_data,0,8);
+								zx_write_buffer->kempston=0;
 								//rel_data_joy=data_joy;
 							}
+
 							if(now_joy1_mode==4){ //4 - External NES joystick maps to QAOPM keys
 								if ((data_joy&D_JOY_UP))		{zx_write_buffer->kb_data[2]|=(1<<0);}; //Q
 								if ((data_joy&D_JOY_DOWN))		{zx_write_buffer->kb_data[1]|=(1<<0);}; //A
@@ -4979,7 +4990,7 @@ int main(void){
 								if ((data_joy&D_JOY_B))			{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<0);busy_wait_us(2);}; //Caps + 0
 							}
 							if(now_joy1_mode==0){ //0 - External NES joystick maps to Kempston joystick //||(now_joy1_mode>4)
-								zx_write_buffer->kempston|=(uint8_t)data_joy;
+								zx_write_buffer->kempston|=(uint8_t)(data_joy&0xFF);
 							};			
 							
 							if(now_joy2_mode==4){ //4 - External NES joystick maps to QAOPM keys
@@ -5017,7 +5028,7 @@ int main(void){
 								if (((data_joy>>16)&D_JOY_B))			{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<0);busy_wait_us(2);}; //Caps + 0
 							}
 							if(now_joy2_mode==0){ //0 - External NES joystick maps to Kempston joystick //||(now_joy1_mode>4)
-								zx_write_buffer->kempston|=(uint8_t)(data_joy>>16);
+								zx_write_buffer->kempston|=(uint8_t)((data_joy>>16)&0xFF);
 							};			
 														
 
@@ -5039,6 +5050,7 @@ int main(void){
 		          				zx_write_buffer->kempston_mouse_x=ibuff[2];
 		          				zx_write_buffer->kempston_mouse_y=ibuff[3];
 		        			}
+							//printf("kempston[%02X]\n",zx_write_buffer->kempston);
 							//printf("zx[0][%02X]   zx[1][%02X]   zx[2][%02X]   zx[3][%02X]   zx[4][%02X]   zx[5][%02X]   zx[6][%02X]   zx[7][%02X]  data_joy:[%02X]   joy_pressed:[%d]\n",zx_write_buffer->kb_data[0],zx_write_buffer->kb_data[1],zx_write_buffer->kb_data[2],zx_write_buffer->kb_data[3],zx_write_buffer->kb_data[4],zx_write_buffer->kb_data[5],zx_write_buffer->kb_data[6],zx_write_buffer->kb_data[7],data_joy,joy_pressed);
 							//printf("data_joy "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(data_joy));
 							//printf("data_joy:%d     kempston:%d\n",data_joy,zx_write_buffer->kempston);

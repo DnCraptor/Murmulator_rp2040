@@ -190,8 +190,8 @@ static uint8_t FAST_FUNC(in_z80)(z80* const z, uint8_t port) {
 		} 
 		if (port16==0x021F){
 			//printf("Read joy 0x021F: %02X\n",zx_read_buffer->kempston);
-			return zx_read_buffer->kempston & 0b00011111;
-			//return zx_read_buffer->kempston & 0b11111111;
+			//return zx_read_buffer->kempston & 0b00011111;
+			return zx_read_buffer->kempston & 0b11111111;
 		} else
 		if ((port16&0x001F)==0x001F){
 			//printf("Read joy 0x001F: %02X\n",zx_read_buffer->kempston);
