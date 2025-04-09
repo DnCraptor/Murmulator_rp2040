@@ -4,7 +4,7 @@
 
 // #define PICO_FLASH_SIZE_BYTES (4 * 1024 * 1024)
 
-//#define DEBUG_DELAY
+#define DEBUG_DELAY
 
 //#define DEBUG_BLINK
 
@@ -369,7 +369,7 @@ bool FAST_FUNC(zx_flash_callback)(repeating_timer_t *rt) {
 
 //Joy joy1 = {2, 5, 4, 0, 0, 0};
 
-#define D_JOY_MENU	0x00C0
+#define D_JOY_HAT_UNLOCK	(D_JOY_SELECT|D_JOY_START)
 
 #define HAT_UP		(1<<0)
 #define HAT_DOWN	(1<<1)
@@ -2188,7 +2188,7 @@ int main(void){
 	}  
 	if(!init_fs){
 		cfg_sound_mode=3;
-		cfg_sound_out_mode=DEF_CFG_OUT_MODE;
+		cfg_sound_out_mode=OUT_PCM;//DEF_CFG_OUT_MODE;
 		cfg_volume=DEF_CFG_VOLUME_MODE;
 		cfg_lcd_video_out=DEF_CFG_LCD_VIDEO_MODE;
 		cfg_brightness=DEF_CFG_BRIGHT_MODE;
@@ -2218,15 +2218,18 @@ int main(void){
 	inInit(tape_load_pin);
 
 	//cfg_sound_mode=0;
-	/*
-	//printf("Real config:\n");
-	//printf("  + cfg_tap_load_mode:%d\n", cfg_tap_load_mode);
-	//printf("  + cfg_def_joy_mode:%d\n", cfg_def_joy_mode);
-	//printf("  + cfg_res_before_mode:%d\n", cfg_res_before_mode);
-	//printf("  + cfg_sound_mode:%d\n", cfg_sound_mode);
-	//printf("  + cfg_hud_enable:%d\n", cfg_hud_enable);
-	//printf("  + cfg_frame_rate:%d\n", cfg_frame_rate);
-	*/
+	#ifdef DEBUG_DELAY
+		printf("Real config:\n");
+		printf("  + cfg_tap_load_mode:%d\n", cfg_tap_load_mode);
+		printf("  + cfg_def_joy1_mode:%d\n", cfg_def_joy1_mode);
+		printf("  + cfg_def_joy2_mode:%d\n", cfg_def_joy2_mode);
+		printf("  + cfg_def_kbd_mode:%d\n", cfg_def_kbd_mode);
+		printf("  + cfg_res_before_mode:%d\n", cfg_res_before_mode);
+		printf("  + cfg_sound_mode:%d\n", cfg_sound_mode);
+		printf("  + cfg_sound_out_mode:%d\n", cfg_sound_out_mode);
+		printf("  + cfg_hud_enable:%d\n", cfg_hud_enable);
+		printf("  + cfg_frame_rate:%d\n", cfg_frame_rate);
+	#endif
 	
 	// ----------Init Sound------------
 	ay_timer_enabled=false;

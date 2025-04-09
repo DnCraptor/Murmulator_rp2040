@@ -83,6 +83,11 @@ static uint32_t i2s_data;
 static uint32_t trans_count_DMA=1<<30;
 
 void i2s_init(){
+    gpio_init(I2S_DATA_PIN);
+    gpio_pull_down(I2S_DATA_PIN);
+    
+    I2S_LR_PIN
+
     uint offset = pio_add_program(PIO_I2S, &audio_i2s_program);
     //printf("offset:%d\n",offset);
     audio_i2s_program_init(PIO_I2S, offset, I2S_DATA_PIN , I2S_CLK_BASE_PIN);

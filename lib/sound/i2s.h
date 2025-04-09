@@ -4,7 +4,7 @@
 #define PIO_I2S pio1
 #define I2S_DATA_PIN 26
 #define I2S_CLK_BASE_PIN 27
-
+#define I2S_LR_PIN 28
 
 void i2s_init();
 void i2s_deinit();

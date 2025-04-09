@@ -44,6 +44,8 @@
         "util_sd.h": "c",
         "joystics.h": "c",
         "anim_eyes.h": "c",
-        "util_wii_joy.h": "c"
+        "util_wii_joy.h": "c",
+        "pico.h": "c",
+        "stdlib.h": "c"
     }
 }
