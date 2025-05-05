@@ -139,7 +139,7 @@ void  __not_in_flash_func(AY_reset)(uint8_t s_mode){
 	chips[0]=chip;
 	chips[1]=chip;
 
-	if (sound_mode == 4){
+	if (sound_mode == HARDWARE_TS){
 		send_to_595(LOW(AY_Enable));
 		//  busy_wait_us(500);
 		for (int i = 0; i < 0x20; i++){

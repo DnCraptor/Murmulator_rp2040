@@ -44,11 +44,13 @@
 #define TFT_CLK_PIN		(13) 
 */
 
+#define RGB888(r, g, b) ((r<<16) | (g << 8 ) | b )
+
 #define TFT_MIN_BRIGHTNESS 20
 
 typedef enum g_mode{
     g_mode_320x240x8bpp,
-    g_mode_320x240x4bpp
+    g_mode_320x240x4bpp,
 }g_mode;
 
 typedef enum fr_rate{

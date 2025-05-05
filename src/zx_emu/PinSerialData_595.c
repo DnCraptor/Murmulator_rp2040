@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "hardware/clocks.h"
 #include "hardware/pwm.h"
+#include "hardware/timer.h"
 #include "pico/platform.h"
 #include "PinSerialData_595.h"
 
@@ -76,7 +77,7 @@ void __not_in_flash_func(send_to_595)(uint16_t data){
 	gpio_put(LATCH_595_PIN,1);
     gpio_put(LATCH_595_PIN,1);
     gpio_put(LATCH_595_PIN,1);
-	//busy_wait_us(1);
+	busy_wait_us(1);
     gpio_put(CLK_595_PIN,0);
 	gpio_put(CLK_595_PIN,0);
     gpio_put(LATCH_595_PIN,0);

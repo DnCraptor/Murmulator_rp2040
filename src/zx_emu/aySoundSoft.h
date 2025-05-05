@@ -2,6 +2,12 @@
 #include "inttypes.h"
 #include "stdbool.h" 
 
+#define NO_SOUND 0
+#define ONLY_BEEPER 1
+#define BEEPER_AND_SOFT_AY 2
+#define BEEPER_AND_SOFT_TS 3
+#define HARDWARE_TS 4
+
 extern uint8_t outs[6];
 
 void AY_select_reg(uint8_t N_reg);

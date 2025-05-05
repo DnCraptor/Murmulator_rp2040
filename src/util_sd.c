@@ -122,7 +122,7 @@ int get_files_from_dir(char *dir_name,char* nf_buf, int MAX_N_FILES){
 		return 0;
 	}
 
-	printf("Get dir: %s\n", dir_name);
+	//printf("Get dir: %s\n", dir_name);
 	int inx=0;
 	while (1){   
 		file_descr=f_readdir(&sd_dir,&sd_file_info);
@@ -131,7 +131,7 @@ int get_files_from_dir(char *dir_name,char* nf_buf, int MAX_N_FILES){
 			return 0;
 		}
 		if (strlen(sd_file_info.fname)==0){
-			printf("Files read:%d\n",inx);
+			//printf("Files read:%d\n",inx);
 			break;
 		} 
 		FileRec* file = (FileRec*)&nf_buf[sizeof(FileRec)*inx];
@@ -153,7 +153,7 @@ int get_files_from_dir(char *dir_name,char* nf_buf, int MAX_N_FILES){
 			}
 		}
 		strncpy(file->filename,temp,(FILE_NAME_LEN-1));
-		printf("FN:%s\n",file->filename);
+		//printf("FN:%s\n",file->filename);
 		inx++; 
 		if (inx>=MAX_N_FILES) break;
 	}

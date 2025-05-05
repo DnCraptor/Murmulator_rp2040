@@ -1342,27 +1342,21 @@ bool LoadTxt(char *file_name){
 
 /*-------Graphics--------*/
 /*-------Soundrive--------*/
-uint8_t SoundLeft=0;
-uint8_t SoundRight=0;
+uint16_t SoundLeft=0;
+uint16_t SoundRight=0;
 uint8_t SoundLeft_A=0;
 uint8_t SoundLeft_B=0;
 uint8_t SoundRight_A=0;
-uint8_t SoundRight_B=0;	
+uint8_t SoundRight_B=0;  
 
-
-//bool __scratch_y("sound_sdrive")Soundrive(uint8_t port,uint8_t val)
 void FAST_FUNC(Soundrive)(uint8_t port,uint8_t val){
-//void __scratch_y("sound_load") Soundrive (uint8_t port,uint8_t val){
-	if (port == 0x0F) {SoundLeft_A = val;}
-	if (port == 0x1F) {SoundLeft_B = val;}
-	if (port == 0x4F) {SoundRight_A = val;}	
-	if (port == 0x5F) {SoundRight_B = val;}
-	if (port == 0xFB) {SoundRight_B = val;SoundLeft_B = val;SoundRight_A = val;SoundLeft_A = val;}
-	// а может ещё и обнуление нужно при софт сбросе?
-	SoundLeft = (SoundLeft_A + SoundLeft_B)/4;			// в левый канал PWM
-	SoundRight = (SoundRight_A + SoundRight_B)/4;		// в правый канал PWM
-	//pwm_set_gpio_level(ZX_AY_PWM_PIN0,SoundRight); // Право
-	//pwm_set_gpio_level(ZX_AY_PWM_PIN1,SoundLeft); // Лево	
+
+  if (port == 0xFB) {  SoundRight = (uint16_t)val;SoundLeft = SoundRight;return;}        //COVOX MONO
+                                                //SounDrive пока 8 бит хотелось бы 10 -12
+  if (port == 0x0F) {SoundLeft_A = val; SoundLeft = (SoundLeft_A * SoundLeft_B)/256;return;}
+  if (port == 0x1F) {SoundLeft_B = val; SoundLeft = (SoundLeft_A * SoundLeft_B)/256;return;}
+  if (port == 0x4F) {SoundRight_A = val;SoundRight = (SoundRight_A * SoundRight_B)/256;return;}  
+  if (port == 0x5F) {SoundRight_B = val;SoundRight = (SoundRight_A * SoundRight_B)/256;}            
 }
 /*-------Soundrive--------*/
 /*-------AY inits--------*/
@@ -1475,8 +1469,8 @@ void FAST_FUNC(hw_zx_set_beep_out)(uint8_t val){
 bool FAST_FUNC(AY_timer_callback)(repeating_timer_t *rt){
 	outL_old=outL;
 	outR_old=outR;
-	outL=(((2*(uint16_t)outs[0])+(2*(uint16_t)outs[3])+(uint16_t)outs[1]+(uint16_t)outs[4])+((uint16_t)SoundLeft));
-	outR=(((2*(uint16_t)outs[2])+(2*(uint16_t)outs[5])+(uint16_t)outs[1]+(uint16_t)outs[4])+((uint16_t)SoundRight));
+	outL=(((2*(uint16_t)outs[0])+(2*(uint16_t)outs[3])+(uint16_t)outs[1]+(uint16_t)outs[4])+(SoundLeft));
+	outR=(((2*(uint16_t)outs[2])+(2*(uint16_t)outs[5])+(uint16_t)outs[1]+(uint16_t)outs[4])+(SoundRight));
 	if(cfg_sound_out_mode==OUT_PWM){
 		pwm_set_gpio_level(ZX_AY_PWM_PIN0,(uint8_t)((outR*cfg_volume)/100)); // Право
 		pwm_set_gpio_level(ZX_AY_PWM_PIN1,(uint8_t)((outL*cfg_volume)/100)); // Лево
@@ -1927,6 +1921,27 @@ uint8_t hat_switch_process(uint16_t data_joy){
 	if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_A)){result|=HAT_A;result|=HAT_SELECT;}
 	if((data_joy&D_JOY_SELECT)&&(data_joy&D_JOY_B)){result|=HAT_B;result|=HAT_SELECT;}
 	return result;
+}
+
+void get_battery_stats(){
+	monitor_battery_voltage();
+	battery_status = round(battery_power_percent/10);
+	if(battery_status>10)battery_status=10;
+	if (battery_power_charge = batt_management_usb_power_detected()){
+		battery_status_ico++;
+		if(battery_status_ico>3){battery_status_ico=1;};
+		battery_status|=battery_status_ico<<4;
+	} else {
+		battery_status&=~0xF0;
+	}
+	//printf("bs:[%02X]\tbpp:%d\tbpc:%d\n",battery_status,battery_power_percent,battery_power_charge);
+
+	/*battery_status = battery_power_percent;
+	if(battery_status>100)battery_status=100;
+	memset(batt_text,0,sizeof(batt_text));
+	sprintf(batt_text," %03d%%",battery_status);
+	if(batt_management_usb_power_detected()){batt_text[0]=0x18;};
+	*/
 }
 
 FileRec* file=NULL;
@@ -2425,7 +2440,8 @@ int main(void){
 				printf("Battery monitor started\n");
 			}
 			busy_wait_ms(100);
-			monitor_battery_voltage();
+			get_battery_stats();
+			//monitor_battery_voltage();
 			//monitor_battery_voltage();
 		}
 		//-------Init Battery Check--------	
@@ -2530,24 +2546,7 @@ int main(void){
 
 					if ((ticker%8192)==0){
 						if(current_hud_mode&HM_SHOW_BATTERY){
-							monitor_battery_voltage();
-							battery_status = round(battery_power_percent/10);
-							if(battery_status>10)battery_status=10;
-							if (battery_power_charge = batt_management_usb_power_detected()){
-								battery_status_ico++;
-								if(battery_status_ico>3){battery_status_ico=1;};
-								battery_status|=battery_status_ico<<4;
-							} else {
-								battery_status&=~0xF0;
-							}
-							//printf("bs:[%02X]\tbpp:%d\tbpc:%d\n",battery_status,battery_power_percent,battery_power_charge);
-
-							/*battery_status = battery_power_percent;
-							if(battery_status>100)battery_status=100;
-							memset(batt_text,0,sizeof(batt_text));
-							sprintf(batt_text," %03d%%",battery_status);
-							if(batt_management_usb_power_detected()){batt_text[0]=0x18;};
-							*/
+							get_battery_stats();
 						}
 
 					}
@@ -2643,23 +2642,7 @@ int main(void){
 				ticker++;
 				if ((ticker%32700)==0){
 					if(current_hud_mode&HM_SHOW_BATTERY){
-						monitor_battery_voltage();
-						battery_status = round(battery_power_percent/10);
-						if(battery_status>10)battery_status=10;
-						if (battery_power_charge = batt_management_usb_power_detected()){
-							battery_status_ico++;
-							if(battery_status_ico>3){battery_status_ico=1;};
-							battery_status|=battery_status_ico<<4;
-						} else {
-							battery_status&=~0xF0;
-						}
-						//printf("bs:[%02X]\tbpp:%d\tbpc:%d\n",battery_status,battery_power_percent,battery_power_charge);
-						/*
-						battery_status = battery_power_percent;
-						if(battery_status>100)battery_status=100;
-						memset(batt_text,0,sizeof(batt_text));
-						sprintf(batt_text,"%c%-3d%%",batt_management_usb_power_detected()?0x20:0x18,battery_status);
-						*/
+						get_battery_stats();
 					}
 				}				
 				if((us_to_ms(time_us_32())-timer_update)>TIMER_PERIOD){
@@ -4496,25 +4479,9 @@ int main(void){
 					//6printf("%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n",mixL,mixR,outL,outR,beeper_signed,tape_signed,beep_data,beep_data_old);
 					//printf("HM1>[%04X] %d\n",current_hud_mode,hud_timer);
 				}
-				if ((ticker%800000)==0){
+				if ((ticker%300000)==0){
 					if(current_hud_mode&HM_SHOW_BATTERY){
-						monitor_battery_voltage();
-						battery_status = round(battery_power_percent/10);
-						if(battery_status>10)battery_status=10;
-						if (battery_power_charge = batt_management_usb_power_detected()){
-							battery_status_ico++;
-							if(battery_status_ico>3){battery_status_ico=1;};
-							battery_status|=battery_status_ico<<4;
-						} else {
-							battery_status&=~0xF0;
-						}
-						//printf("bs:[%02X]\tbpp:%d\tbpc:%d\n",battery_status,battery_power_percent,battery_power_charge);
-						/*
-						battery_status = battery_power_percent;
-						if(battery_status>100)battery_status=100;
-						memset(batt_text,0,sizeof(batt_text));
-						sprintf(batt_text,"%c%-3d%%",batt_management_usb_power_detected()?0x20:0x18,battery_status);
-						*/
+						get_battery_stats();
 					}
 				}
 			
@@ -4697,22 +4664,17 @@ int main(void){
 				if(current_hud_mode&HM_SHOW_KEYLOCK){
 					if(kbd_lock){
 						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
-							#ifdef VGA_HDMI
-								if((g_out)current_video_out>g_out_HDMI){
-									pwm_set_gpio_level(TFT_LED_PIN,0);			//уровень подсветки TFT
-								}
-							#endif
-							//graphics_set_hud_handler(&hud_kb_lock);
+							if(cfg_mobile_mode==MOBILE_MURM_ON){
+								pwm_set_gpio_level(TFT_LED_PIN,0);			//уровень подсветки TFT
+							}
 							printf("Screen OFF\n");
 							hud_timer=0;
 							continue;
 						}
 					} else {
-						#ifdef VGA_HDMI
-							if((g_out)current_video_out>g_out_HDMI){
-								pwm_set_gpio_level(TFT_LED_PIN,(TFT_MIN_BRIGHTNESS+(cfg_brightness*10)));			//уровень подсветки TFT
-							}
-						#endif
+						if(cfg_mobile_mode==MOBILE_MURM_ON){
+							pwm_set_gpio_level(TFT_LED_PIN,(TFT_MIN_BRIGHTNESS+(cfg_brightness*10)));			//уровень подсветки TFT
+						}
 						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
 							printf("Screen ON\n");
 							current_hud_mode&=~HM_SHOW_KEYLOCK;
