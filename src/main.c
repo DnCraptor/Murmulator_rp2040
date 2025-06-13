@@ -369,7 +369,7 @@ bool FAST_FUNC(zx_flash_callback)(repeating_timer_t *rt) {
 
 //Joy joy1 = {2, 5, 4, 0, 0, 0};
 
-#define D_JOY_MENU	0x00C0
+#define D_JOY_HAT_UNLOCK	(D_JOY_SELECT|D_JOY_START)
 
 #define HAT_UP		(1<<0)
 #define HAT_DOWN	(1<<1)
@@ -525,7 +525,7 @@ void process_input(){
 
 	data_joy = data_joy1|(data_ext_joy1<<8)|(data_joy2<<16)|(data_ext_joy2<<24);
 
-	//printf("[%08X]\tJ1[%02X]>[%02X]\tJ2[%02X]>[%02X]\tCJ[%08X]\n",temp_data_joy,data_joy1,data_ext_joy1,data_joy2,data_ext_joy2,data_joy);
+	//printf("JR[%08X]\tJ1[%02X]>[%02X]\tJ2[%02X]>[%02X]\tCJ[%08X]\n",temp_data_joy,data_joy1,data_ext_joy1,data_joy2,data_ext_joy2,data_joy);
 
 	if(Joystics.joy_pressed) {joy_pressed = true;} else{joy_pressed = false;}
 	if(Joystics.Present_WII_joy){map_kmouse(&Wii_joy_data,zx_write_buffer);}	
@@ -1342,27 +1342,21 @@ bool LoadTxt(char *file_name){
 
 /*-------Graphics--------*/
 /*-------Soundrive--------*/
-uint8_t SoundLeft=0;
-uint8_t SoundRight=0;
+uint16_t SoundLeft=0;
+uint16_t SoundRight=0;
 uint8_t SoundLeft_A=0;
 uint8_t SoundLeft_B=0;
 uint8_t SoundRight_A=0;
-uint8_t SoundRight_B=0;	
+uint8_t SoundRight_B=0;  
 
-
-//bool __scratch_y("sound_sdrive")Soundrive(uint8_t port,uint8_t val)
 void FAST_FUNC(Soundrive)(uint8_t port,uint8_t val){
-//void __scratch_y("sound_load") Soundrive (uint8_t port,uint8_t val){
-	if (port == 0x0F) {SoundLeft_A = val;}
-	if (port == 0x1F) {SoundLeft_B = val;}
-	if (port == 0x4F) {SoundRight_A = val;}	
-	if (port == 0x5F) {SoundRight_B = val;}
-	if (port == 0xFB) {SoundRight_B = val;SoundLeft_B = val;SoundRight_A = val;SoundLeft_A = val;}
-	// а может ещё и обнуление нужно при софт сбросе?
-	SoundLeft = (SoundLeft_A + SoundLeft_B)/4;			// в левый канал PWM
-	SoundRight = (SoundRight_A + SoundRight_B)/4;		// в правый канал PWM
-	//pwm_set_gpio_level(ZX_AY_PWM_PIN0,SoundRight); // Право
-	//pwm_set_gpio_level(ZX_AY_PWM_PIN1,SoundLeft); // Лево	
+
+  if (port == 0xFB) {  SoundRight = (uint16_t)val;SoundLeft = SoundRight;return;}        //COVOX MONO
+                                                //SounDrive пока 8 бит хотелось бы 10 -12
+  if (port == 0x0F) {SoundLeft_A = val; SoundLeft = (SoundLeft_A * SoundLeft_B)/256;return;}
+  if (port == 0x1F) {SoundLeft_B = val; SoundLeft = (SoundLeft_A * SoundLeft_B)/256;return;}
+  if (port == 0x4F) {SoundRight_A = val;SoundRight = (SoundRight_A * SoundRight_B)/256;return;}  
+  if (port == 0x5F) {SoundRight_B = val;SoundRight = (SoundRight_A * SoundRight_B)/256;}            
 }
 /*-------Soundrive--------*/
 /*-------AY inits--------*/
@@ -1475,8 +1469,8 @@ void FAST_FUNC(hw_zx_set_beep_out)(uint8_t val){
 bool FAST_FUNC(AY_timer_callback)(repeating_timer_t *rt){
 	outL_old=outL;
 	outR_old=outR;
-	outL=(((2*(uint16_t)outs[0])+(2*(uint16_t)outs[3])+(uint16_t)outs[1]+(uint16_t)outs[4])+((uint16_t)SoundLeft));
-	outR=(((2*(uint16_t)outs[2])+(2*(uint16_t)outs[5])+(uint16_t)outs[1]+(uint16_t)outs[4])+((uint16_t)SoundRight));
+	outL=(((2*(uint16_t)outs[0])+(2*(uint16_t)outs[3])+(uint16_t)outs[1]+(uint16_t)outs[4])+(SoundLeft));
+	outR=(((2*(uint16_t)outs[2])+(2*(uint16_t)outs[5])+(uint16_t)outs[1]+(uint16_t)outs[4])+(SoundRight));
 	if(cfg_sound_out_mode==OUT_PWM){
 		pwm_set_gpio_level(ZX_AY_PWM_PIN0,(uint8_t)((outR*cfg_volume)/100)); // Право
 		pwm_set_gpio_level(ZX_AY_PWM_PIN1,(uint8_t)((outL*cfg_volume)/100)); // Лево
@@ -1929,6 +1923,27 @@ uint8_t hat_switch_process(uint16_t data_joy){
 	return result;
 }
 
+void get_battery_stats(){
+	monitor_battery_voltage();
+	battery_status = round(battery_power_percent/10);
+	if(battery_status>10)battery_status=10;
+	if (battery_power_charge = batt_management_usb_power_detected()){
+		battery_status_ico++;
+		if(battery_status_ico>3){battery_status_ico=1;};
+		battery_status|=battery_status_ico<<4;
+	} else {
+		battery_status&=~0xF0;
+	}
+	//printf("bs:[%02X]\tbpp:%d\tbpc:%d\n",battery_status,battery_power_percent,battery_power_charge);
+
+	/*battery_status = battery_power_percent;
+	if(battery_status>100)battery_status=100;
+	memset(batt_text,0,sizeof(batt_text));
+	sprintf(batt_text," %03d%%",battery_status);
+	if(batt_management_usb_power_detected()){batt_text[0]=0x18;};
+	*/
+}
+
 FileRec* file=NULL;
 
 uint32_t timer_update =0;
@@ -2188,7 +2203,7 @@ int main(void){
 	}  
 	if(!init_fs){
 		cfg_sound_mode=3;
-		cfg_sound_out_mode=DEF_CFG_OUT_MODE;
+		cfg_sound_out_mode=OUT_PCM;//DEF_CFG_OUT_MODE;//OUT_PCM;
 		cfg_volume=DEF_CFG_VOLUME_MODE;
 		cfg_lcd_video_out=DEF_CFG_LCD_VIDEO_MODE;
 		cfg_brightness=DEF_CFG_BRIGHT_MODE;
@@ -2218,15 +2233,18 @@ int main(void){
 	inInit(tape_load_pin);
 
 	//cfg_sound_mode=0;
-	/*
-	//printf("Real config:\n");
-	//printf("  + cfg_tap_load_mode:%d\n", cfg_tap_load_mode);
-	//printf("  + cfg_def_joy_mode:%d\n", cfg_def_joy_mode);
-	//printf("  + cfg_res_before_mode:%d\n", cfg_res_before_mode);
-	//printf("  + cfg_sound_mode:%d\n", cfg_sound_mode);
-	//printf("  + cfg_hud_enable:%d\n", cfg_hud_enable);
-	//printf("  + cfg_frame_rate:%d\n", cfg_frame_rate);
-	*/
+	#ifdef DEBUG_DELAY
+		printf("Real config:\n");
+		printf("  + cfg_tap_load_mode:%d\n", cfg_tap_load_mode);
+		printf("  + cfg_def_joy1_mode:%d\n", cfg_def_joy1_mode);
+		printf("  + cfg_def_joy2_mode:%d\n", cfg_def_joy2_mode);
+		printf("  + cfg_def_kbd_mode:%d\n", cfg_def_kbd_mode);
+		printf("  + cfg_res_before_mode:%d\n", cfg_res_before_mode);
+		printf("  + cfg_sound_mode:%d\n", cfg_sound_mode);
+		printf("  + cfg_sound_out_mode:%d\n", cfg_sound_out_mode);
+		printf("  + cfg_hud_enable:%d\n", cfg_hud_enable);
+		printf("  + cfg_frame_rate:%d\n", cfg_frame_rate);
+	#endif
 	
 	// ----------Init Sound------------
 	ay_timer_enabled=false;
@@ -2422,7 +2440,8 @@ int main(void){
 				printf("Battery monitor started\n");
 			}
 			busy_wait_ms(100);
-			monitor_battery_voltage();
+			get_battery_stats();
+			//monitor_battery_voltage();
 			//monitor_battery_voltage();
 		}
 		//-------Init Battery Check--------	
@@ -2518,28 +2537,18 @@ int main(void){
 					//graphics_update_screen();
 					#endif
 					ticker++;
-					if ((ticker%8196)==0){
-						if(current_hud_mode&HM_SHOW_BATTERY){
-							monitor_battery_voltage();
-							battery_status = round(battery_power_percent/10);
-							if(battery_status>10)battery_status=10;
-							if (battery_power_charge = batt_management_usb_power_detected()){
-								battery_status_ico++;
-								if(battery_status_ico>3){battery_status_ico=1;};
-								battery_status|=battery_status_ico<<4;
-							} else {
-								battery_status&=~0xF0;
-							}
-							//printf("bs:[%02X]\tbpp:%d\tbpc:%d\n",battery_status,battery_power_percent,battery_power_charge);
+					/*if ((ticker%2048)==0){
+						//i2s_out((int)4096,(int)4096);
+					}
+					if ((ticker%4096)==0){
+						//i2s_out((int)0,(int)0);
+					}*/
 
-							/*battery_status = battery_power_percent;
-							if(battery_status>100)battery_status=100;
-							memset(batt_text,0,sizeof(batt_text));
-							sprintf(batt_text," %03d%%",battery_status);
-							if(batt_management_usb_power_detected()){batt_text[0]=0x18;};
-							*/
-							
+					if ((ticker%8192)==0){
+						if(current_hud_mode&HM_SHOW_BATTERY){
+							get_battery_stats();
 						}
+
 					}
 					/* HNY 2025
 					if(repeat==1){
@@ -2633,23 +2642,7 @@ int main(void){
 				ticker++;
 				if ((ticker%32700)==0){
 					if(current_hud_mode&HM_SHOW_BATTERY){
-						monitor_battery_voltage();
-						battery_status = round(battery_power_percent/10);
-						if(battery_status>10)battery_status=10;
-						if (battery_power_charge = batt_management_usb_power_detected()){
-							battery_status_ico++;
-							if(battery_status_ico>3){battery_status_ico=1;};
-							battery_status|=battery_status_ico<<4;
-						} else {
-							battery_status&=~0xF0;
-						}
-						//printf("bs:[%02X]\tbpp:%d\tbpc:%d\n",battery_status,battery_power_percent,battery_power_charge);
-						/*
-						battery_status = battery_power_percent;
-						if(battery_status>100)battery_status=100;
-						memset(batt_text,0,sizeof(batt_text));
-						sprintf(batt_text,"%c%-3d%%",batt_management_usb_power_detected()?0x20:0x18,battery_status);
-						*/
+						get_battery_stats();
 					}
 				}				
 				if((us_to_ms(time_us_32())-timer_update)>TIMER_PERIOD){
@@ -2676,8 +2669,22 @@ int main(void){
 				/*if(((Joystics.Present_WII_joy)||(Joystics.Present_i2c_PCF_16_buttons))&&(data_joy!=0)){
 					busy_wait_ms(150); //WII joystick delay
 				}else*/
+				if ((KBD_PRESS)||(joy_pressed)){ //like a speccy keypress sound
+					hw_zx_set_beep_out(0x00);
+					busy_wait_us(3500);
+					hw_zx_set_beep_out(0x08);
+					busy_wait_us(3500);
+					hw_zx_set_beep_out(0x00);
+					/*
+					busy_wait_ms(3);
+					hw_zx_set_beep_out(0x08);
+					busy_wait_ms(3);
+					hw_zx_set_beep_out(0x00);
+					*/
+				}
+
 				if(data_joy!=0){
-					busy_wait_ms(150); //joystick delay
+					busy_wait_ms(110); //joystick delay
 				}						
 				
 				//busy_wait_us(500);
@@ -4472,25 +4479,9 @@ int main(void){
 					//6printf("%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n",mixL,mixR,outL,outR,beeper_signed,tape_signed,beep_data,beep_data_old);
 					//printf("HM1>[%04X] %d\n",current_hud_mode,hud_timer);
 				}
-				if ((ticker%800000)==0){
+				if ((ticker%300000)==0){
 					if(current_hud_mode&HM_SHOW_BATTERY){
-						monitor_battery_voltage();
-						battery_status = round(battery_power_percent/10);
-						if(battery_status>10)battery_status=10;
-						if (battery_power_charge = batt_management_usb_power_detected()){
-							battery_status_ico++;
-							if(battery_status_ico>3){battery_status_ico=1;};
-							battery_status|=battery_status_ico<<4;
-						} else {
-							battery_status&=~0xF0;
-						}
-						//printf("bs:[%02X]\tbpp:%d\tbpc:%d\n",battery_status,battery_power_percent,battery_power_charge);
-						/*
-						battery_status = battery_power_percent;
-						if(battery_status>100)battery_status=100;
-						memset(batt_text,0,sizeof(batt_text));
-						sprintf(batt_text,"%c%-3d%%",batt_management_usb_power_detected()?0x20:0x18,battery_status);
-						*/
+						get_battery_stats();
 					}
 				}
 			
@@ -4517,6 +4508,13 @@ int main(void){
 										current_hud_mode|=HM_MAIN_HUD;
 									};
 									gpio_put(WORK_LED_PIN,1);
+									/*
+									i2s_out((int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)));
+									busy_wait_us(125);
+									i2s_out((int)(((int)(128)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(128)*4)*(cfg_volume/CFG_VOLUME_STEP)));
+									busy_wait_us(125);
+									i2s_out((int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)),(int)(((int)(0)*4)*(cfg_volume/CFG_VOLUME_STEP)));
+									*/
 								}
 								if ((GetWD1793_Status()==2)&&(drives_status[dr]!=ICON_DISK_WRITE)){
 									drives_status[dr]=ICON_DISK_WRITE;
@@ -4666,22 +4664,17 @@ int main(void){
 				if(current_hud_mode&HM_SHOW_KEYLOCK){
 					if(kbd_lock){
 						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
-							#ifdef VGA_HDMI
-								if((g_out)current_video_out>g_out_HDMI){
-									pwm_set_gpio_level(TFT_LED_PIN,0);			//уровень подсветки TFT
-								}
-							#endif
-							//graphics_set_hud_handler(&hud_kb_lock);
+							if(cfg_mobile_mode==MOBILE_MURM_ON){
+								pwm_set_gpio_level(TFT_LED_PIN,0);			//уровень подсветки TFT
+							}
 							printf("Screen OFF\n");
 							hud_timer=0;
 							continue;
 						}
 					} else {
-						#ifdef VGA_HDMI
-							if((g_out)current_video_out>g_out_HDMI){
-								pwm_set_gpio_level(TFT_LED_PIN,(TFT_MIN_BRIGHTNESS+(cfg_brightness*10)));			//уровень подсветки TFT
-							}
-						#endif
+						if(cfg_mobile_mode==MOBILE_MURM_ON){
+							pwm_set_gpio_level(TFT_LED_PIN,(TFT_MIN_BRIGHTNESS+(cfg_brightness*10)));			//уровень подсветки TFT
+						}
 						if((hud_timer>0)&&(my_millis()-hud_timer)>(SHOW_SCREEN_DELAY*2)){
 							printf("Screen ON\n");
 							current_hud_mode&=~HM_SHOW_KEYLOCK;
@@ -4920,8 +4913,10 @@ int main(void){
 	
 							if(data_joy!=rel_data_joy){
 								memset(zx_write_buffer->kb_data,0,8);
+								zx_write_buffer->kempston=0;
 								//rel_data_joy=data_joy;
 							}
+
 							if(now_joy1_mode==4){ //4 - External NES joystick maps to QAOPM keys
 								if ((data_joy&D_JOY_UP))		{zx_write_buffer->kb_data[2]|=(1<<0);}; //Q
 								if ((data_joy&D_JOY_DOWN))		{zx_write_buffer->kb_data[1]|=(1<<0);}; //A
@@ -4957,7 +4952,7 @@ int main(void){
 								if ((data_joy&D_JOY_B))			{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<0);busy_wait_us(2);}; //Caps + 0
 							}
 							if(now_joy1_mode==0){ //0 - External NES joystick maps to Kempston joystick //||(now_joy1_mode>4)
-								zx_write_buffer->kempston|=(uint8_t)data_joy;
+								zx_write_buffer->kempston|=(uint8_t)(data_joy&0xFF);
 							};			
 							
 							if(now_joy2_mode==4){ //4 - External NES joystick maps to QAOPM keys
@@ -4995,7 +4990,7 @@ int main(void){
 								if (((data_joy>>16)&D_JOY_B))			{zx_write_buffer->kb_data[0]|=(1<<0);busy_wait_us(2);zx_write_buffer->kb_data[4]|=(1<<0);busy_wait_us(2);}; //Caps + 0
 							}
 							if(now_joy2_mode==0){ //0 - External NES joystick maps to Kempston joystick //||(now_joy1_mode>4)
-								zx_write_buffer->kempston|=(uint8_t)(data_joy>>16);
+								zx_write_buffer->kempston|=(uint8_t)((data_joy>>16)&0xFF);
 							};			
 														
 
@@ -5017,6 +5012,7 @@ int main(void){
 		          				zx_write_buffer->kempston_mouse_x=ibuff[2];
 		          				zx_write_buffer->kempston_mouse_y=ibuff[3];
 		        			}
+							//printf("kempston[%02X]\n",zx_write_buffer->kempston);
 							//printf("zx[0][%02X]   zx[1][%02X]   zx[2][%02X]   zx[3][%02X]   zx[4][%02X]   zx[5][%02X]   zx[6][%02X]   zx[7][%02X]  data_joy:[%02X]   joy_pressed:[%d]\n",zx_write_buffer->kb_data[0],zx_write_buffer->kb_data[1],zx_write_buffer->kb_data[2],zx_write_buffer->kb_data[3],zx_write_buffer->kb_data[4],zx_write_buffer->kb_data[5],zx_write_buffer->kb_data[6],zx_write_buffer->kb_data[7],data_joy,joy_pressed);
 							//printf("data_joy "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(data_joy));
 							//printf("data_joy:%d     kempston:%d\n",data_joy,zx_write_buffer->kempston);
@@ -5030,7 +5026,7 @@ int main(void){
 						
 						//}
 						if(hat_locked>0){
-							if(((data_joy&D_JOY_MENU)==D_JOY_MENU)||(((data_joy>>16)&D_JOY_MENU)==D_JOY_MENU)){
+							if(((data_joy&D_JOY_HAT_UNLOCK)==D_JOY_HAT_UNLOCK)||(((data_joy>>16)&D_JOY_HAT_UNLOCK)==D_JOY_HAT_UNLOCK)){
 								hat_locked=0;
 								menu_ptr++;
 								menu_mode[menu_ptr]=MENU_JOY_MAIN;
