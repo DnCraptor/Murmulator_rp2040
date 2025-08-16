@@ -15,9 +15,9 @@ if(WIN32)
 else()
     set(USERHOME $ENV{HOME})
 endif()
-set(sdkVersion 2.1.1)
+set(sdkVersion 2.2.0)
 set(toolchainVersion 14_2_Rel1)
-set(picotoolVersion 2.1.1)
+set(picotoolVersion 2.2.0)
 set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 if (EXISTS ${picoVscode})
     include(${picoVscode})
@@ -26,10 +26,10 @@ endif()
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards )
 
 set(PICO_BOARD murmulator CACHE STRING "Board type")
-set(PICO_PLATFORM "rp2040" CACHE STRING "Chip type")
+#set(PICO_PLATFORM "rp2040" CACHE STRING "Chip type")
 
 #set(PICO_BOARD murmulator2 CACHE STRING "Board type")
-#set(PICO_PLATFORM "rp2350" CACHE STRING "Chip type")
+set(PICO_PLATFORM "rp2350" CACHE STRING "Chip type")
 
 set (VERSION_MAJOR 0)
 set (VERSION_MINOR 96)
@@ -51,7 +51,7 @@ option(HDMI "Enable HDMI display" OFF)
 option(TV "Enable TV composite output" OFF)
 option(SOFTTV "Enable TV soft composite output" OFF)
 
-SET(PROJECT_NAME "${PICO_BOARD}_vga-hdmi-tft_${SOFT_VERSION_FN}_m1_p1_2")
+SET(PROJECT_NAME "m1p2-${PICO_BOARD}_vga-hdmi-tft_${SOFT_VERSION_FN}_2")
 SET(BUILD_NAME "${PROJECT_NAME}_${SOFT_VERSION}")
 
 set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}") #/bin/
