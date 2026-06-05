@@ -1,3 +1,5 @@
+#include <pico.h>
+
 #define PICO_FLASH_SPI_CLKDIV 4
 
 #define VGA_HDMI
@@ -48,14 +50,23 @@
 
 #define TIMER_PERIOD 500 //ms
 
-
+#ifndef PIN_ZX_LOAD
 #define PIN_ZX_LOAD (22)
+#endif
 
+#ifndef ZX_AY_PWM_PIN0
 #define ZX_AY_PWM_PIN0 (26)
+#endif
+#ifndef ZX_AY_PWM_PIN1
 #define ZX_AY_PWM_PIN1 (27)
+#endif
+#ifndef ZX_BEEP_PIN
 #define ZX_BEEP_PIN (28)
+#endif
 
+#ifndef WORK_LED_PIN
 #define WORK_LED_PIN (25)
+#endif
 
 //#define TST_PIN (29)
 

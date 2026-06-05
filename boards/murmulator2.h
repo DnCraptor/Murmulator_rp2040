@@ -19,7 +19,23 @@
 // NES Gamepad
 #define NES_GPIO_CLK 20
 #define NES_GPIO_DATA 26
+#define NES_GPIO_DATA1 26
+#define NES_GPIO_DATA2 27
 #define NES_GPIO_LAT 21
+
+// 74HC595 / AY
+#define LATCH_595_PIN 9
+#define CLK_595_PIN 10
+#define DATA_595_PIN 11
+#define CLK_AY_PIN1 21
+#define CLK_AY_PIN2 29
+
+// Misc
+#define PIN_ZX_LOAD 22
+#define ZX_AY_PWM_PIN0 10
+#define ZX_AY_PWM_PIN1 11
+#define ZX_BEEP_PIN 9
+#define WORK_LED_PIN PICO_DEFAULT_LED_PIN
 
 // VGA 8 pins starts from pin:
 #define VGA_BASE_PIN 12

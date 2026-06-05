@@ -1,14 +1,19 @@
 #pragma once
 
-#include "inttypes.h"
-#include "stdbool.h"
+#include <pico.h>
+#include <inttypes.h>
+#include <stdbool.h>
 
 #define PIO_VIDEO pio0
 #define PIO_VIDEO_ADDR pio0
 
+#ifndef beginVideo_PIN
+#ifdef VGA_BASE_PIN
+#define beginVideo_PIN (VGA_BASE_PIN)
+#else
 #define beginVideo_PIN (6)
-
-
+#endif
+#endif
 
 typedef enum g_mode{
     g_mode_320x240x8bpp,
