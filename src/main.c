@@ -223,7 +223,7 @@ short int settings_lines=0;
 short int menu_inc_dec=0;
 
 bool is_pause_mode=false;
-bool i2cKbdMode;
+bool i2cKbdMode=false;
 bool keyPressed;
 uint8_t i2cBtnPressed = 0;
 
@@ -1902,15 +1902,17 @@ void input_init(){
 	}else{
 		joy_connected = false;
 	}
-	
+#ifndef MURM2	
 	if (i2c_kbd_start()){i2cKbdMode = true;}else{i2cKbdMode = false;}
 
 	short int i2c_state = i2c_kbd_data_in();
 	//printf ("i2c_state: %d\n",i2c_state);
-
+#endif
 	if(!i2cKbdMode) {
+#ifndef MURM2	
 		//printf ("i2c Keyboard not connected\n");
-		i2c_kbd_deinit();	
+		i2c_kbd_deinit();
+#endif
 		busy_wait_ms(100);
 		start_PS2_capture();
 		printf ("PS/2 Keyboard Started\n");

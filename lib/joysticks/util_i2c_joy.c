@@ -32,7 +32,7 @@ void i2c_joy_deinit(){
 bool i2c_joy_start(){
 
 	bool is_present=false;
-
+	#ifndef MURM2
 		i2c_joy_init(CLOCK_I2C_100kHz);
 		
 		if(Init_Wii_Joystick()){Joystics.Present_WII_joy = true; is_present=true; printf ("WII joystick is present\n");} else {Joystics.Present_WII_joy = false;}
@@ -52,6 +52,6 @@ bool i2c_joy_start(){
 			if (init_MCP23017(I2C_MCP_SEGA_JOY_ADDR)) {is_present=true;printf ("MCP23017 for SEGA joy is present\n");Joystics.Present_i2c_MCP_SEGA_joy = true;}else{Joystics.Present_i2c_MCP_SEGA_joy = false;}
 			if(!is_present){i2c_joy_deinit();}
 		}
-		
+	#endif
 	return is_present;
 };
