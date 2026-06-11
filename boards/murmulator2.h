@@ -17,11 +17,11 @@
 #define PS2KBD_GPIO_FIRST 2
 
 // NES Gamepad
-#define NES_GPIO_CLK 20
-#define NES_GPIO_DATA 26
-#define NES_GPIO_DATA1 26
-#define NES_GPIO_DATA2 27
-#define NES_GPIO_LAT 21
+#define D_JOY_CLK_PIN 20
+#define D_JOY_DATA_PIN 26
+#define D_JOY1_DATA_PIN 26
+#define D_JOY2_DATA_PIN 27
+#define D_JOY_LATCH_PIN 21
 
 // 74HC595 / AY
 #define LATCH_595_PIN 9

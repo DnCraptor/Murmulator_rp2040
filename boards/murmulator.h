@@ -16,11 +16,11 @@
 #define PS2KBD_GPIO_FIRST 0
 
 // NES Gamepad
-#define NES_GPIO_CLK 14
-#define NES_GPIO_LAT 15
-#define NES_GPIO_DATA 16
-#define NES_GPIO_DATA1 16
-#define NES_GPIO_DATA2 17
+#define D_JOY_CLK_PIN 14
+#define D_JOY_LATCH_PIN 15
+#define D_JOY_DATA_PIN 16
+#define D_JOY1_DATA_PIN 16
+#define D_JOY2_DATA_PIN 17
 
 // VGA 8 pins starts from pin:
 #define VGA_BASE_PIN 6

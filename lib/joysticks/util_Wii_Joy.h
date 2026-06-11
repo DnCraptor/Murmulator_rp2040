@@ -5,16 +5,16 @@
 #define WII_PORT (i2c1)
 #define WII_CLOCK (100000) //4000
 
-#ifndef NES_GPIO_CLK
+#ifndef D_JOY_CLK_PIN
 #define WII_SDA_PIN (14)
 #else
-#define WII_SDA_PIN NES_GPIO_CLK
+#define WII_SDA_PIN D_JOY_CLK_PIN
 #endif
 
-#ifndef NES_GPIO_LAT
+#ifndef D_JOY_LATCH_PIN
 #define WII_SCL_PIN (15)
 #else
-#define WII_SCL_PIN NES_GPIO_LAT
+#define WII_SCL_PIN D_JOY_LATCH_PIN
 #endif
 
 #define WII_ADDRESS 0x52
