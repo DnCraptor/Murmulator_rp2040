@@ -27,8 +27,8 @@
 #define LATCH_595_PIN 9
 #define CLK_595_PIN 10
 #define DATA_595_PIN 11
-#define CLK_AY_PIN1 21
-#define CLK_AY_PIN2 29
+//#define CLK_AY_PIN1 21
+//#define CLK_AY_PIN2 29
 
 // Misc
 #define PIN_ZX_LOAD 22

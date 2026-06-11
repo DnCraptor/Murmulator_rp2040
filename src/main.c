@@ -1,7 +1,5 @@
 #include <pico.h>
 
-#define PICO_FLASH_SPI_CLKDIV 4
-
 #define VGA_HDMI
 
 // #define PICO_FLASH_SIZE_BYTES (4 * 1024 * 1024)
