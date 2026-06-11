@@ -23,6 +23,9 @@
 #define D_JOY2_DATA_PIN 27
 #define D_JOY_LATCH_PIN 21
 
+#define POWER_SDA_PIN (20)
+#define POWER_SCL_PIN (26)
+
 // 74HC595 / AY
 #define LATCH_595_PIN 9
 #define CLK_595_PIN 10

@@ -22,6 +22,9 @@
 #define D_JOY1_DATA_PIN 16
 #define D_JOY2_DATA_PIN 17
 
+#define POWER_SDA_PIN (14)
+#define POWER_SCL_PIN (15)
+
 // VGA 8 pins starts from pin:
 #define VGA_BASE_PIN 6
 

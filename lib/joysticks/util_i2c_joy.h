@@ -1,5 +1,6 @@
 #pragma once
-#include "inttypes.h"
+#include <pico.h>
+#include <inttypes.h>
 
 #include "util_Wii_Joy.h"
 #include "util_i2c_PCF857X.h"
@@ -28,8 +29,18 @@ adress		A0		A1		A2
 #define i2c_joy_port (i2c1)
 #define CLOCK_I2C_100kHz (100)
 #define CLOCK_I2C_400kHz (400)
+
+#ifndef D_JOY_CLK_PIN
 #define PICO_I2C_JOY_SDA_PIN (14)
+#else
+#define PICO_I2C_JOY_SDA_PIN  (D_JOY_CLK_PIN)
+#endif
+
+#ifndef D_JOY_LATCH_PIN
 #define PICO_I2C_JOY_SCL_PIN (15)
+#else
+#define PICO_I2C_JOY_SCL_PIN  (D_JOY_LATCH_PIN)
+#endif
 
 extern uint8_t i2c_joy_data[16];
 

@@ -960,7 +960,13 @@ uint8_t EditDialogBox(char *header,char *message,char *value,uint8_t colorFG,uin
 			do{
 				if(strlen(iface_btn[di_id][max_btn])>1){
 					pos-=strlen(iface_btn[di_id][max_btn])*FONT_W;
-					draw_text(pos,left_y+(FONT_H*3),iface_btn[di_id][max_btn],COLOR_TEXT,(dia_pos-value_len)==max_btn?COLOR_CURRENT_BG:COLOR_BACKGOUND);
+					draw_text(
+						pos,
+						left_y+(FONT_H*3),
+						iface_btn[di_id][max_btn],
+						COLOR_TEXT,
+						(dia_pos-value_len)==max_btn?COLOR_CURRENT_BG:COLOR_BACKGOUND
+					);
 				}
 				max_btn--;
 			} while(max_btn>=0);
@@ -2053,12 +2059,40 @@ void draw_flakes(){
 }
 */
 
+#ifndef PICO_RP2040
+#include <hardware/regs/qmi.h>
+#include <hardware/structs/qmi.h>
+void __not_in_flash_func(flash_timings)(int mhz) {
+        const int max_flash_freq = 66 * MHZ;
+        const int clock_hz = mhz * MHZ;
+        int divisor = (clock_hz + max_flash_freq - 1) / max_flash_freq;
+        if (divisor == 1 && clock_hz > 100000000) {
+            divisor = 2;
+        }
+        int rxdelay = divisor;
+        if (clock_hz / divisor > 100000000) {
+            rxdelay += 1;
+        }
+        qmi_hw->m[0].timing = 0x60007000 |
+                            rxdelay << QMI_M0_TIMING_RXDELAY_LSB |
+                            divisor << QMI_M0_TIMING_CLKDIV_LSB;
+}
+#endif
+
 int main(void){
 	//vreg_set_voltage(VREG_VOLTAGE_1_20);//def
 	vreg_set_voltage(VREG_VOLTAGE_1_30);
 	//vreg_set_voltage(VREG_VOLTAGE_1_25);
-	
 	busy_wait_ms(100);
+#if !PICO_RP2040
+	#ifdef VGA_HDMI
+	    flash_timings(315);
+	#else
+		#if COMPOSITE_TV||SOFT_COMPOSITE_TV
+			flash_timings(378);
+		#endif
+	#endif
+#endif
 	/*
 		вот эти пробуй:280, 288, 290400, 296, 297, 300
 		дальше такие:302400, 303, 304800, 306, 307, 308, 309600, 312, 314400, 315, 316, 316800
