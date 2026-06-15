@@ -2,19 +2,17 @@
 #include <pico.h>
 #include <inttypes.h>
 
+#ifndef WII_PORT
 #define WII_PORT (i2c1)
+#endif
 #define WII_CLOCK (100000) //4000
 
-#ifndef D_JOY_CLK_PIN
+#ifndef WII_SDA_PIN
 #define WII_SDA_PIN (14)
-#else
-#define WII_SDA_PIN D_JOY_CLK_PIN
 #endif
 
-#ifndef D_JOY_LATCH_PIN
+#ifndef WII_SCL_PIN
 #define WII_SCL_PIN (15)
-#else
-#define WII_SCL_PIN D_JOY_LATCH_PIN
 #endif
 
 #define WII_ADDRESS 0x52

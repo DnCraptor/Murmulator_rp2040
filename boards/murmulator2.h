@@ -25,6 +25,14 @@
 #define D_JOY2_DATA_PIN 27
 #define D_JOY_LATCH_PIN 21
 
+#define i2c_joy_port (i2c0)
+#define WII_PORT (i2c0)
+
+#define PICO_I2C_JOY_SDA_PIN 0
+#define PICO_I2C_JOY_SCL_PIN 1
+#define WII_SDA_PIN 0
+#define WII_SCL_PIN 1
+
 #define POWER_SDA_PIN (20)
 #define POWER_SCL_PIN (26)
 

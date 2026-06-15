@@ -26,20 +26,18 @@ adress		A0		A1		A2
 #define I2C_MCP_SEGA_JOY_ADDR (0x25)
 #define I2C_PCF8574_8BUTTON_ADDR (0x26)
 
+#ifndef i2c_joy_port
 #define i2c_joy_port (i2c1)
+#endif
 #define CLOCK_I2C_100kHz (100)
 #define CLOCK_I2C_400kHz (400)
 
-#ifndef D_JOY_CLK_PIN
+#ifndef PICO_I2C_JOY_SDA_PIN
 #define PICO_I2C_JOY_SDA_PIN (14)
-#else
-#define PICO_I2C_JOY_SDA_PIN  (D_JOY_CLK_PIN)
 #endif
 
-#ifndef D_JOY_LATCH_PIN
+#ifndef PICO_I2C_JOY_SCL_PIN
 #define PICO_I2C_JOY_SCL_PIN (15)
-#else
-#define PICO_I2C_JOY_SCL_PIN  (D_JOY_LATCH_PIN)
 #endif
 
 extern uint8_t i2c_joy_data[16];
